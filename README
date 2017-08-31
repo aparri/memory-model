@@ -1,0 +1,28 @@
+			=========================
+			LINUX KERNEL MEMORY MODEL
+			=========================
+
+============
+INTRODUCTION
+============
+
+The memory model of the Linux kernel written in the "cat" language and
+executable by the "herd7" simulator.
+
+
+============
+REQUIREMENTS
+============
+
+  https://github.com/herd/herdtools7
+
+See "herdtools7/INSTALL.md" for installation instructions.
+
+
+===========
+BASIC USAGE
+===========
+
+  $ herd7 -conf linux-kernel.cfg [option(s)] <litmus_test(s)>
+
+See "herdtools7/doc/" for more information.
