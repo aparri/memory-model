@@ -61,14 +61,14 @@ empty rmw & (fre ; coe) as atomic
 
 (* Preserved Program Order *)
 let dep = addr | data
-let rwdep = (dep | ctrl) ; [W]
+let rwdep = (dep | ctrl) ; [W] (* No HW speculates dependent writes... *)
 let overwrite = co | fr
-let to-w = rwdep | (overwrite & int)
-let rrdep = addr | (dep ; rfi)
-let strong-rrdep = rrdep+ & rb-dep
-let to-r = strong-rrdep | rfi-rel-acq
-let fence = strong-fence | wmb | po-rel | rmb | acq-po
-let ppo = rrdep* ; (to-r | to-w | fence)
+let to-w = rwdep | (overwrite & int) (* ... and per-thread per-location SC *)
+let rrdep = addr | (dep ; rfi) (* Ordered, but "addr ; [R]" and DEC Alpha *)
+let strong-rrdep = rrdep+ & rb-dep (* DEC Alpha and load-to-load deps ... *)
+let to-r = strong-rrdep | rfi-rel-acq (* ... and intra-thread rel-acq *)
+let fence = strong-fence | wmb | po-rel | rmb | acq-po (* Non-dep ordering *)
+let ppo = rrdep* ; (to-r | to-w | fence) (* Intra-thread ordering *)
 
 (* Happens Before *)
 let A-cumul(r) = rfe? ; r
