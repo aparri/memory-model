@@ -29,19 +29,26 @@ include "lock.cat"
 (*******************)
 
 (* Fences *)
-let rb-dep = [R] ; fencerel(Rb_dep) ; [R]
-let rmb = [R \ Noreturn] ; fencerel(Rmb) ; [R \ Noreturn]
-let wmb = [W] ; fencerel(Wmb) ; [W]
-let mb = ([M] ; fencerel(Mb) ; [M]) |
+let ghost-read = ([M] ; po ; [Ghostacq]) | ([Ghostacq] ; po ; [M])
+let ghost-write = ([M] ; po ; [Ghostrel]) | ([Ghostrel] ; po ; [M])
+let ghost-before = ([Ghostacq] ; po ; [M]) | ([Ghostrel] ; po ; [M])
+let ghost-after = ([M] ; po ; [Ghostacq]) | ([M] ; po ; [Ghostrel])
+let ghost-access = ghost-read | ghost-write
+let gb-mb = ([M] ; fencerel(Gbmb) ; [M])
+let mb = ((([M] ; fencerel(Mb) ; [M]) |
 	([M] ; fencerel(Before_atomic) ; [RMW] ; po? ; [M]) |
-	([M] ; po? ; [RMW] ; fencerel(After_atomic) ; [M])
+	([M] ; po? ; [RMW] ; fencerel(After_atomic) ; [M])) \ ghost-access) |
+	gb-mb
+let rb-dep = ([R] ; fencerel(Rb_dep) ; [R]) \ ghost-read
+let rmb = ([R \ Noreturn] ; fencerel(Rmb) ; [R \ Noreturn]) \ ghost-read
+let wmb = ([W] ; fencerel(Wmb) ; [W]) \ ghost-write
 let gp = po ; [Sync] ; po?
 
 let strong-fence = mb | gp
 
 (* Release Acquire *)
-let acq-po = [Acquire] ; po ; [M]
-let po-rel = [M] ; po ; [Release]
+let acq-po = ([Acquire] ; po ; [M]) \ ghost-after
+let po-rel = ([M] ; po ; [Release]) \ ghost-before
 let rfi-rel-acq = [Release] ; rfi ; [Acquire]
 
 (**********************************)
