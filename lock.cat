@@ -24,8 +24,10 @@ include "cross.cat"
 let lk-rmw = ([LKR] ; po-loc ; [LKW]) \ (po ; po)
 let rmw = rmw | lk-rmw
 
-(* A paired LKR must always see an unlocked value; spin_lock() calls nested
-   inside a critical section (for the same lock) always deadlock *)
+(*
+ * A paired LKR must always see an unlocked value; spin_lock() calls nested
+ * inside a critical section (for the same lock) always deadlock.
+ *)
 empty ([LKW] ; po-loc ; [domain(lk-rmw)]) \ (po-loc ; [UL] ; po-loc)
 	as lock-nest
 
@@ -43,8 +45,10 @@ flag ~empty [M \ IW] ; loc ; [ALL-LOCKS] as mixed-lock-accesses
 flag ~empty [FW] ; loc ; [ALL-LOCKS] as lock-final
 
 
-(* Put lock operations in their appropriate classes, but leave UL out of W
-   until after the co relation has been generated *)
+(*
+ * Put lock operations in their appropriate classes, but leave UL out of W
+ * until after the co relation has been generated.
+ *)
 let R = R | LKR | LF
 let W = W | LKW
 
@@ -67,9 +71,11 @@ let rfi-lf = ([LKW] ; po-loc ; [LF]) \ ([LKW] ; po-loc ; [UL] ; po-loc)
 
 (* rfe for LF events *)
 let all-possible-rfe-lf =
-  (* Given an LF event r, compute the possible rfe edges for that event
-     (all those starting from LKW events in other threads),
-     and then convert that relation to a set of single-edge relations *)
+  (*
+   * Given an LF event r, compute the possible rfe edges for that event
+   * (all those starting from LKW events in other threads),
+   * and then convert that relation to a set of single-edge relations.
+   *)
   let possible-rfe-lf r =
     let pair-to-relation p = p ++ 0
     in map pair-to-relation ((LKW * {r}) & loc & ext)

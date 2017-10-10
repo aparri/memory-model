@@ -19,8 +19,10 @@
  * http://www.gnu.org/licenses/gpl-2.0.html.
  *)
 
-(* File "lock.cat" handles locks and is experimental.
-   It can be replaced by include "cos.cat" for tests that do not use locks *)
+(*
+ * File "lock.cat" handles locks and is experimental.
+ * It can be replaced by include "cos.cat" for tests that do not use locks.
+ *)
 
 include "lock.cat"
 
