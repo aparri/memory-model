@@ -1,0 +1,145 @@
+This document lists the litmus-test patterns that we have been discussing,
+along with examples from the Linux kernel.  This is intended to feed into
+the recipes document.  All examples are from v4.13.
+
+0.	Single-variable SC.
+
+	a.	Within a single CPU, the use of the ->dynticks_nmi_nesting
+		counter by rcu_nmi_enter() and rcu_nmi_exit() qualifies
+		(see kernel/rcu/tree.c).  The counter is accessed by
+		interrupts and NMIs as well as by process-level code.
+		This counter can be accessed by other CPUs, but only
+		for debug output.
+
+	b.	Between CPUs, I would put forward the ->dflags
+		updates, but this is anything but simple.  But maybe
+		OK for an illustration?
+
+1.	MP (see test6.pdf for nickname translation)
+
+	a.	smp_store_release() / smp_load_acquire()
+
+		init_stack_slab() in lib/stackdepot.c uses release-acquire
+		to handle initialization of a slab of the stack.  Working
+		out the mutual-exclusion design is left as an exercise for
+		the reader.
+
+	b.	rcu_assign_pointer() / rcu_dereference()
+
+		expand_to_next_prime() does the rcu_assign_pointer(),
+		and next_prime_number() does the rcu_dereference().
+		This mediates access to a bit vector that is expanded
+		as additional primes are needed.  These two functions
+		are in lib/prime_numbers.c.
+
+	c.	smp_wmb() / smp_rmb()
+
+		xlog_state_switch_iclogs() contains the following:
+
+			log->l_curr_block -= log->l_logBBsize;
+			ASSERT(log->l_curr_block >= 0);
+			smp_wmb();
+			log->l_curr_cycle++;
+
+		And xlog_valid_lsn() contains the following:
+
+			cur_cycle = ACCESS_ONCE(log->l_curr_cycle);
+			smp_rmb();
+			cur_block = ACCESS_ONCE(log->l_curr_block);
+
+	d.	Replacing either of the above with smp_mb()
+
+		Holding off on this one for the moment...
+
+2.	Release-acquire chains, AKA ISA2, Z6.2, LB, and 3.LB
+
+	Lots of variety here, can in some cases substitute:
+	
+	a.	READ_ONCE() for smp_load_acquire()
+	b.	WRITE_ONCE() for smp_store_release()
+	c.	Dependencies for both smp_load_acquire() and
+		smp_store_release().
+	d.	smp_wmb() for smp_store_release() in first thread
+		of ISA2 and Z6.2.
+	e.	smp_rmb() for smp_load_acquire() in last thread of ISA2.
+
+	The canonical illustration of LB involves the various memory
+	allocators, where you don't want a load from about-to-be-freed
+	memory to see a store initializing a later incarnation of that
+	same memory area.  But the per-CPU caches make this a very
+	long and complicated example.
+
+	I am not aware of any three-CPU release-acquire chains in the
+	Linux kernel.  There are three-CPU lock-based chains in RCU,
+	but these are not at all simple, either.
+
+	Thoughts?
+
+3.	SB
+
+	a.	smp_mb(), as in lockless wait-wakeup coordination.
+		And as in sys_membarrier()-scheduler coordination,
+		for that matter.
+
+		Examples seem to be lacking.  Most cases use locking.
+		Here is one rather strange one from RCU:
+
+		void call_rcu_tasks(struct rcu_head *rhp, rcu_callback_t func)
+		{
+			unsigned long flags;
+			bool needwake;
+			bool havetask = READ_ONCE(rcu_tasks_kthread_ptr);
+
+			rhp->next = NULL;
+			rhp->func = func;
+			raw_spin_lock_irqsave(&rcu_tasks_cbs_lock, flags);
+			needwake = !rcu_tasks_cbs_head;
+			*rcu_tasks_cbs_tail = rhp;
+			rcu_tasks_cbs_tail = &rhp->next;
+			raw_spin_unlock_irqrestore(&rcu_tasks_cbs_lock, flags);
+			/* We can't create the thread unless interrupts are enabled. */
+			if ((needwake && havetask) ||
+			    (!havetask && !irqs_disabled_flags(flags))) {
+				rcu_spawn_tasks_kthread();
+				wake_up(&rcu_tasks_cbs_wq);
+			}
+		}
+
+		And for the wait side, using synchronize_sched() to supply
+		the barrier for both ends, with the preemption disabling
+		due to raw_spin_lock_irqsave() serving as the read-side
+		critical section:
+
+		if (!list) {
+			wait_event_interruptible(rcu_tasks_cbs_wq,
+						 rcu_tasks_cbs_head);
+			if (!rcu_tasks_cbs_head) {
+				WARN_ON(signal_pending(current));
+				schedule_timeout_interruptible(HZ/10);
+			}
+			continue;
+		}
+		synchronize_sched();
+
+		-----------------
+
+		Here is another one that uses atomic_cmpxchg() as a
+		full memory barrier:
+
+		if (!wait_event_timeout(*wait, !atomic_read(stopping),
+					msecs_to_jiffies(1000))) {
+			atomic_set(stopping, 0);
+			smp_mb();
+			return -ETIMEDOUT;
+		}
+
+		int omap3isp_module_sync_is_stopping(wait_queue_head_t *wait,
+						     atomic_t *stopping)
+		{
+			if (atomic_cmpxchg(stopping, 1, 0)) {
+				wake_up(wait);
+				return 1;
+			}
+
+			return 0;
+		}
