@@ -38,7 +38,7 @@ flag ~empty LKW \ range(lk-rmw) as unpaired-LKW
 flag ~empty LKR \ domain(lk-rmw) as unpaired-LKR
 
 (* There should be no R or W accesses to spinlocks *)
-let ALL-LOCKS = LK | LKR | LKW | UL | LF
+let ALL-LOCKS = LKR | LKW | UL | LF
 flag ~empty [M \ IW] ; loc ; [ALL-LOCKS] as mixed-lock-accesses
 
 (* The final value of a spinlock should not be tested *)
