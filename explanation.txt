@@ -110,7 +110,7 @@ while and try again.)
 This pattern of memory accesses, where one CPU stores values to two
 shared memory locations and another CPU loads from those locations in
 the opposite order, is widely known as the "Message Passing" or MP
-pattern.  It is typical of memeory access patterns in the kernel.
+pattern.  It is typical of memory access patterns in the kernel.
 
 Please note that this example code is a simplified abstraction.  Real
 buffers are usually larger than a single integer, real device drivers
@@ -272,10 +272,10 @@ includes three types of events:
 These categories are not exclusive; a read or write event can also be
 a fence.  This happens with functions like smp_load_acquire() or
 spin_lock().  However, no single event can be both a read and a write.
-Atomic read-modify-write accesses, such as atomic_inc() or
-clear_bit(), correspond to a pair of events: a read followed by a
-write.  (The write event is be omitted for executions where it doesn't
-occur, such as a cmpxchg() where the comparison fails.)
+Atomic read-modify-write accesses, such as atomic_inc() or xchg(),
+correspond to a pair of events: a read followed by a write.  (The
+write event is omitted for executions where it doesn't occur, such as
+a cmpxchg() where the comparison fails.)
 
 Other parts of the code, those which do not involve interaction with
 shared memory, do not give rise to events.  Thus, arithmetic and
@@ -413,6 +413,8 @@ A read and a write event are linked by a data dependency if the value
 obtained by the read affects the value stored by the write.  As a very
 simple example:
 
+	int x, y;
+
 	r1 = READ_ONCE(x);
 	WRITE_ONCE(y, r1 + 5);
 
@@ -472,8 +474,8 @@ the same CPU (internal reads-from, or rfi) and where they occur on
 different CPUs (external reads-from, or rfe).
 
 For our purposes, a memory location's initial value is treated as
-though it had been written there by an initial store that executes on
-a separate CPU before the program runs.
+though it had been written there by an imaginary initial store that
+executes on a separate CPU before the program runs.
 
 Usage of the rf relation implicitly assumes that loads will always
 read from a single store.  It doesn't apply properly in the presence
@@ -496,7 +498,7 @@ and WRITE_ONCE() will prevent load-tearing; it's not possible to have:
 	}
 
 and end up with r1 = 0x1200 (partly from x's initial value and partly
-from P0's store).
+from the value stored by P0).
 
 On the other hand, load-tearing is unavoidable when mixed-size
 accesses are used.  Consider this example:
@@ -539,9 +541,10 @@ that location.
 
 To put it another way, for any variable x, the coherence order (co) of
 the stores to x is simply the order in which the stores overwrite one
-another.  x's initial value comes first in the coherence order; the
-store which directly overwrites the initial value comes second; the
-store which overwrites that value comes third, and so on.
+another.  The imaginary store which establishes x's initial value
+comes first in the coherence order; the store which directly
+overwrites the initial value comes second; the store which overwrites
+that value comes third, and so on.
 
 You can think of the coherence order as being the order in which the
 stores reach x's location in memory (or if you prefer a more detailed
@@ -627,10 +630,11 @@ value).
 		r2 = READ_ONCE(x);
 	}
 
-If r1 = 5 (reading from P0's store) and r2 = 0 (reading from x's
-initial value) at the end, this would violate the read-read coherence
-rule: The r1 load comes before the r2 load in program order, so it
-must not read from a store that comes later in the coherence order.
+If r1 = 5 (reading from P0's store) and r2 = 0 (reading from the
+imaginary store which establishes x's initial value) at the end, this
+would violate the read-read coherence rule: The r1 load comes before
+the r2 load in program order, so it must not read from a store that
+comes later in the coherence order.
 
 (As a minor curiosity, if this code had used normal loads instead of
 READ_ONCE() in P1, on Itanium it sometimes could end up with r1 = 5
@@ -1676,6 +1680,13 @@ because all the other parts (fences and rfe) are already included in
 hb anyway, and where the formal model adds prop into hb, it includes
 an explicit requirement that the events being linked are on the same
 CPU.
+
+Another minor difference has to do with events that are both memory
+accesses and fences, such as those corresponding to smp_load_acquire()
+calls.  In the formal model, these events aren't actually both reads
+and fences; rather, they are read events with an annotation marking
+them as acquires.  (Or write events annotated as releases, in the case
+smp_store_release().)  The final effect is the same.
 
 Although we didn't mention it above, the instruction execution
 ordering provided by the smp_rmb() fence doesn't apply to read events
