@@ -856,7 +856,7 @@ axioms:
 The first and second are quite common; they can be found in many
 memory models (such as those for C11/C++11).  The "happens-before" and
 "propagation" axioms have analogs in other memory models as well.  The
-"Rcu" axiom is specific to the LKMM.
+"rcu" axiom is specific to the LKMM.
 
 Each of these axioms is discussed below.
 
