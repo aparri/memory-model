@@ -169,7 +169,7 @@ goes like this:
 	P1 loads from flag before loading from buf, since CPUs execute
 	their instructions in order.
 
-	P1 must load 0 from buf before P1 stores 1 to it; otherwise r2
+	P1 must load 0 from buf before P0 stores 1 to it; otherwise r2
 	would be 1 since a load obtains its value from the most recent
 	store to the same address.
 
@@ -554,8 +554,8 @@ Coherence order is required to be consistent with program order.  This
 requirement takes the form of four coherency rules:
 
 	Write-write coherence: If W ->po-loc W' (i.e., W comes before
-	W' in program order and they access the same location) are two
-	stores, then W ->co W'.
+	W' in program order and they access the same location), where W
+	and W' are two stores, then W ->co W'.
 
 	Write-read coherence: If W ->po-loc R, where W is a store and R
 	is a load, then R must read from W or from some other store
@@ -565,9 +565,10 @@ requirement takes the form of four coherency rules:
 	is a store, then the store which R reads from must come before
 	W in the coherence order.
 
-	Read-read coherence: If R ->po-loc R' are two loads, then
-	either they read from the same store or else the store read by
-	R comes before the store read by R' in the coherence order.
+	Read-read coherence: If R ->po-loc R', where R and R' are two
+	loads, then either they read from the same store or else the
+	store read by R comes before the store read by R' in the
+	coherence order.
 
 This is sometimes referred to as sequential consistency per variable,
 because it means that the accesses to any single memory location obey
@@ -630,6 +631,13 @@ If r1 = 5 (reading from P0's store) and r2 = 0 (reading from x's
 initial value) at the end, this would violate the read-read coherence
 rule: The r1 load comes before the r2 load in program order, so it
 must not read from a store that comes later in the coherence order.
+
+(As a minor curiosity, if this code had used normal loads instead of
+READ_ONCE() in P1, on Itanium it sometimes could end up with r1 = 5
+and r2 = 0!  This results from parallel execution of the operations
+encoded in Itanium's Very-Long-Instruction-Word format, and it is yet
+another motivation for using READ_ONCE() when accessing shared memory
+locations.)
 
 Just like the po relation, co is inherently an ordering -- it is not
 possible for a store to directly or indirectly overwrite itself!  And
@@ -782,8 +790,9 @@ affects stores from other CPUs that propagate to CPU C before the
 fence is executed, as well as stores that are executed on C before the
 fence.  We describe this property by saying that release fences and
 strong fences are A-cumulative.  By contrast, smp_wmb() fences are not
-A-cumulative; they only affect the propagation of po-earlier stores on
-C.
+A-cumulative; they only affect the propagation of stores that are
+executed on C before the fence (i.e., those which precede the fence in
+program order).
 
 smp_read_barrier_depends(), rcu_read_lock(), rcu_read_unlock(), and
 synchronize_rcu() fences have other properties which we discuss later.
@@ -881,8 +890,8 @@ obeyed.
 ATOMIC UPDATES: rmw
 -------------------
 
-What does it mean to say that a read-modify-write update, such as
-atomic_inc(&x), is atomic?  It means that the memory location (x in
+What does it mean to say that a read-modify-write (rmw) update, such
+as atomic_inc(&x), is atomic?  It means that the memory location (x in
 this case) does not get altered between the read and the write events
 making up the atomic operation.  In particular, if two CPUs perform
 atomic_inc(&x) concurrently, it must be guaranteed that the final
@@ -942,7 +951,7 @@ any of the following hold:
 
 	B is also a release fence, such as smp_store_release().
 
-Another possbility, not mentioned earlier but discussed in the next
+Another possibility, not mentioned earlier but discussed in the next
 section, is:
 
 	A and B are both loads, A ->addr B (i.e., there is an address
@@ -999,7 +1008,7 @@ an address dependency like this:
 
 because it could tell that the store and the second load access the
 same location even before it knows what the location's address is.
-However, none of the architectures that the Linux kernel runs on do
+However, none of the architectures supported by the Linux kernel do
 this.)
 
 Two memory accesses of the same location must always be executed in
@@ -1040,8 +1049,8 @@ AND THEN THERE WAS ALPHA
 ------------------------
 
 As mentioned above, the Alpha architecture is unique in that it does
-appear to respect address dependencies to loads.  This means that code
-such as the following:
+not appear to respect address dependencies to loads.  This means that
+code such as the following:
 
 	int x = 0;
 	int y = -1;
@@ -1083,8 +1092,8 @@ final effect is that even though the two loads really are executed in
 program order, it appears that they aren't.
 
 This could not have happened if the local cache had processed the
-incoming stores in FIFO order.  Other architectures do this, but not
-Alpha.
+incoming stores in FIFO order.  In constrast, other architectures
+maintain at least the appearance of FIFO order.
 
 In practice, this difficulty is solved by inserting an
 smp_read_barrier_depends() fence between P1's two loads.  The effect
@@ -1136,13 +1145,17 @@ W's value to be forwarded to R in such cases, meaning that R may well
 execute before W does.
 
 It's important to understand that neither coe nor fre is included in
-hb, despite their similarities to rfe.  For example, suppose we have W
-->coe W'.  This means that W and W' are stores to the same location,
+hb, despite their similarities to rfe.  For example, suppose we have
+W ->coe W'.  This means that W and W' are stores to the same location,
 they execute on different CPUs, and W comes before W' in the coherence
 order (i.e., W' overwrites W).  Nevertheless, it is possible for W' to
 execute before W, because the decision as to which store overwrites
 the other is made later by the memory subsystem.  When the stores are
-nearly simultaneous, either one can come out on top.
+nearly simultaneous, either one can come out on top.  Similarly, when
+R ->fre W it means that W overwrites the value which R reads, but it
+doesn't mean that W has to execute after R.  All that's necessary is
+for the memory subsystem not to propagate W to R's CPU until after R
+has executed, which can happen even if W executes before R.
 
 The third relation included in hb is like ppo, in that it only links
 events that are on the same CPU.  However it is more difficult to
