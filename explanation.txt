@@ -996,12 +996,15 @@ store and a second, po-later load reads from that store:
 
 	R ->dep W ->rfi R',
 
-where the dep link can be any kind of dependency.  In this situation
-we know it is possible for the CPU to execute R' before W, because it
-can forward the value that W will store to R'.  But it cannot execute
-R' before R, because it cannot forward the value before it knows what
-that value is, or that W and R' do access the same location, or
-whether W will be executed at all.
+where the dep link can be either an address or a data dependency.  In
+this situation we know it is possible for the CPU to execute R' before
+W, because it can forward the value that W will store to R'.  But it
+cannot execute R' before R, because it cannot forward the value before
+it knows what that value is, or that W and R' do access the same
+location.  However, if there is merely a control dependency between R
+and W then the CPU can speculatively forward W to R' before executing
+R; if the speculation turns out to be wrong then the CPU merely has to
+restart or abandon R'.
 
 (In theory, a CPU might forward a store to a load when it runs across
 an address dependency like this:
@@ -1511,9 +1514,9 @@ A ->rscs-link B says that A is part of (or before the start of) a
 critical section which starts before B executes.
 
 Putting this all together, the LKMM expresses the Grace Period
-Guarantee by requiring there to be no cycles consisting of gp-link and
-rscs-link connections in which the number of gp-link instances is >=
-the number of rscs-link instances.  It does this by defining the
+Guarantee by requiring that there are no cycles consisting of gp-link
+and rscs-link connections in which the number of gp-link instances is
+>= the number of rscs-link instances.  It does this by defining the
 rcu-path relation to link events A and B whenever it is possible to
 pass from A to B by a sequence of gp-link and rscs-link connections
 with at least as many of the former as the latter.  The LKMM's "rcu"
