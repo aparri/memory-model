@@ -1,0 +1,28 @@
+Run 1:
+
+litmus-tests/absperf/C-SB+l-o-o-u+l-o-o-u.litmus 0.007 0.00 0.01
+litmus-tests/absperf/C-SB+l-o-o-u+l-o-o-u+l-o-o-u.litmus 0.039 0.03 0.05
+litmus-tests/absperf/C-SB+l-o-o-u+l-o-o-u+l-o-o-u+l-o-o-u.litmus 0.379 0.37 0.39
+litmus-tests/absperf/C-SB+l-o-o-u+l-o-o-u+l-o-o-u+l-o-o-u+l-o-o-u.litmus 5.187 4.90 6.82
+
+litmus-tests/absperf/C-SB+l-o-o-u+l-o-o-u-X.litmus 0.061 0.06 0.07
+litmus-tests/absperf/C-SB+l-o-o-u+l-o-o-u+l-o-o-u-X.litmus 3.542 3.37 4.75
+litmus-tests/absperf/C-SB+l-o-o-u+l-o-o-u+l-o-o-u+l-o-o-u-X.litmus 569.189 523.73 676.97
+litmus-tests/absperf/C-SB+l-o-o-u+l-o-o-u+l-o-o-u+l-o-o-u+l-o-o-u-X.litmus >113853
+
+------------------------------------------------------------------------
+
+Run 2:
+
+litmus-tests/absperf/C-SB+l-o-o-u+l-o-o-u.litmus 0.004 0.00 0.01
+litmus-tests/absperf/C-SB+l-o-o-u+l-o-o-u+l-o-o-u.litmus 0.041 0.04 0.05
+litmus-tests/absperf/C-SB+l-o-o-u+l-o-o-u+l-o-o-u+l-o-o-u.litmus 0.374 0.36 0.39
+litmus-tests/absperf/C-SB+l-o-o-u+l-o-o-u+l-o-o-u+l-o-o-u+l-o-o-u.litmus 4.873 4.79 5.20
+
+litmus-tests/absperf/C-SB+l-o-o-u+l-o-o-u-C.litmus 0.039 0.03 0.04
+litmus-tests/absperf/C-SB+l-o-o-u+l-o-o-u+l-o-o-u-C.litmus 1.653 1.64 1.70
+litmus-tests/absperf/C-SB+l-o-o-u+l-o-o-u+l-o-o-u+l-o-o-l-C.litmus 151.962 149.76 155.42
+
+litmus-tests/absperf/C-SB+l-o-o-u+l-o-o-u-X.litmus 0.058 0.05 0.07
+litmus-tests/absperf/C-SB+l-o-o-u+l-o-o-u+l-o-o-u-X.litmus 3.203 3.18 3.22
+litmus-tests/absperf/C-SB+l-o-o-u+l-o-o-u+l-o-o-u+l-o-o-u-X.litmus 500.96 496.16 510.73
