@@ -1,3 +1,0 @@
-Why "absperf"?  Because this directory demostrates performance benefits
-of abstraction.  This goes beyond C++'s zero-cost abstraction and breaks
-into negative-cost abstraction.  ;-)
