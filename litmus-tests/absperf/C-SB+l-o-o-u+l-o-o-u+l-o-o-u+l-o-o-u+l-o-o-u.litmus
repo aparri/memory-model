@@ -5,6 +5,8 @@ C C-SB+l-o-o-u+l-o-o-u+l-o-o-u+l-o-o-u+l-o-o-u
 
 P0(spinlock_t *sl, int *x0, int *x1)
 {
+	int r1;
+
 	spin_lock(sl);
 	WRITE_ONCE(*x0, 1);
 	r1 = READ_ONCE(*x1);
@@ -13,6 +15,8 @@ P0(spinlock_t *sl, int *x0, int *x1)
 
 P1(spinlock_t *sl, int *x1, int *x2)
 {
+	int r1;
+
 	spin_lock(sl);
 	WRITE_ONCE(*x1, 1);
 	r1 = READ_ONCE(*x2);
@@ -21,6 +25,8 @@ P1(spinlock_t *sl, int *x1, int *x2)
 
 P2(spinlock_t *sl, int *x2, int *x3)
 {
+	int r1;
+
 	spin_lock(sl);
 	WRITE_ONCE(*x2, 1);
 	r1 = READ_ONCE(*x3);
@@ -29,6 +35,8 @@ P2(spinlock_t *sl, int *x2, int *x3)
 
 P3(spinlock_t *sl, int *x3, int *x4)
 {
+	int r1;
+
 	spin_lock(sl);
 	WRITE_ONCE(*x3, 1);
 	r1 = READ_ONCE(*x4);
@@ -37,6 +45,8 @@ P3(spinlock_t *sl, int *x3, int *x4)
 
 P4(spinlock_t *sl, int *x4, int *x0)
 {
+	int r1;
+
 	spin_lock(sl);
 	WRITE_ONCE(*x4, 1);
 	r1 = READ_ONCE(*x0);

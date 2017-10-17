@@ -3,32 +3,44 @@ C C-SB+l-o-o-u+l-o-o-u+l-o-o-u+l-o-o-u-X
 {
 }
 
-P0(spinlock_t *sl, int *x0, int *x1)
+P0(int *sl, int *x0, int *x1)
 {
+	int r2;
+	int r1;
+
 	r2 = xchg_acquire(sl, 1);
 	WRITE_ONCE(*x0, 1);
 	r1 = READ_ONCE(*x1);
 	smp_store_release(sl, 0);
 }
 
-P1(spinlock_t *sl, int *x1, int *x2)
+P1(int *sl, int *x1, int *x2)
 {
+	int r2;
+	int r1;
+
 	r2 = xchg_acquire(sl, 1);
 	WRITE_ONCE(*x1, 1);
 	r1 = READ_ONCE(*x2);
 	smp_store_release(sl, 0);
 }
 
-P2(spinlock_t *sl, int *x2, int *x3)
+P2(int *sl, int *x2, int *x3)
 {
+	int r2;
+	int r1;
+
 	r2 = xchg_acquire(sl, 1);
 	WRITE_ONCE(*x2, 1);
 	r1 = READ_ONCE(*x3);
 	smp_store_release(sl, 0);
 }
 
-P3(spinlock_t *sl, int *x3, int *x0)
+P3(int *sl, int *x3, int *x0)
 {
+	int r2;
+	int r1;
+
 	r2 = xchg_acquire(sl, 1);
 	WRITE_ONCE(*x3, 1);
 	r1 = READ_ONCE(*x0);
