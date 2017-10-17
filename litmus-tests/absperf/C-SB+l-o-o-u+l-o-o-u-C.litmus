@@ -25,4 +25,5 @@ P1(int *sl, int *x0, int *x1)
 	smp_store_release(sl, 0);
 }
 
-exists (0:r1=0 /\ 0:r2=0 /\ 1:r1=0 /\ 1:r2=0)
+filter (0:r2=0 /\ 1:r2=0)
+exists (0:r1=0 /\ 1:r1=0)
