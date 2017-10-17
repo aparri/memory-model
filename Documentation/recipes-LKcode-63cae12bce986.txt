@@ -1,0 +1,268 @@
+commit 63cae12bce9861cec309798d34701cf3da20bc71
+Author: Peter Zijlstra <peterz@infradead.org>
+Date:   Fri Dec 9 14:59:00 2016 +0100
+
+    perf/core: Fix sys_perf_event_open() vs. hotplug
+    
+    There is problem with installing an event in a task that is 'stuck' on
+    an offline CPU.
+    
+    Blocked tasks are not dis-assosciated from offlined CPUs, after all, a
+    blocked task doesn't run and doesn't require a CPU etc.. Only on
+    wakeup do we ammend the situation and place the task on a available
+    CPU.
+    
+    If we hit such a task with perf_install_in_context() we'll loop until
+    either that task wakes up or the CPU comes back online, if the task
+    waking depends on the event being installed, we're stuck.
+    
+    While looking into this issue, I also spotted another problem, if we
+    hit a task with perf_install_in_context() that is in the middle of
+    being migrated, that is we observe the old CPU before sending the IPI,
+    but run the IPI (on the old CPU) while the task is already running on
+    the new CPU, things also go sideways.
+    
+    Rework things to rely on task_curr() -- outside of rq->lock -- which
+    is rather tricky. Imagine the following scenario where we're trying to
+    install the first event into our task 't':
+    
+    CPU0            CPU1            CPU2
+    
+                    (current == t)
+    
+    t->perf_event_ctxp[] = ctx;
+    smp_mb();
+    cpu = task_cpu(t);
+    
+                    switch(t, n);
+                                    migrate(t, 2);
+                                    switch(p, t);
+    
+                                    ctx = t->perf_event_ctxp[]; // must not be NULL
+    
+    smp_function_call(cpu, ..);
+    
+                    generic_exec_single()
+                      func();
+                        spin_lock(ctx->lock);
+                        if (task_curr(t)) // false
+    
+                        add_event_to_ctx();
+                        spin_unlock(ctx->lock);
+    
+                                    perf_event_context_sched_in();
+                                      spin_lock(ctx->lock);
+                                      // sees event
+    
+    So its CPU0's store of t->perf_event_ctxp[] that must not go 'missing'.
+    Because if CPU2's load of that variable were to observe NULL, it would
+    not try to schedule the ctx and we'd have a task running without its
+    counter, which would be 'bad'.
+    
+    As long as we observe !NULL, we'll acquire ctx->lock. If we acquire it
+    first and not see the event yet, then CPU0 must observe task_curr()
+    and retry. If the install happens first, then we must see the event on
+    sched-in and all is well.
+    
+    I think we can translate the first part (until the 'must not be NULL')
+    of the scenario to a litmus test like:
+    
+      C C-peterz
+    
+      {
+      }
+    
+      P0(int *x, int *y)
+      {
+              int r1;
+    
+              WRITE_ONCE(*x, 1);
+              smp_mb();
+              r1 = READ_ONCE(*y);
+      }
+    
+      P1(int *y, int *z)
+      {
+              WRITE_ONCE(*y, 1);
+              smp_store_release(z, 1);
+      }
+    
+      P2(int *x, int *z)
+      {
+              int r1;
+              int r2;
+    
+              r1 = smp_load_acquire(z);
+    	  smp_mb();
+              r2 = READ_ONCE(*x);
+      }
+    
+      exists
+      (0:r1=0 /\ 2:r1=1 /\ 2:r2=0)
+    
+    Where:
+      x is perf_event_ctxp[],
+      y is our tasks's CPU, and
+      z is our task being placed on the rq of CPU2.
+    
+    The P0 smp_mb() is the one added by this patch, ordering the store to
+    perf_event_ctxp[] from find_get_context() and the load of task_cpu()
+    in task_function_call().
+    
+    The smp_store_release/smp_load_acquire model the RCpc locking of the
+    rq->lock and the smp_mb() of P2 is the context switch switching from
+    whatever CPU2 was running to our task 't'.
+    
+    This litmus test evaluates into:
+    
+      Test C-peterz Allowed
+      States 7
+      0:r1=0; 2:r1=0; 2:r2=0;
+      0:r1=0; 2:r1=0; 2:r2=1;
+      0:r1=0; 2:r1=1; 2:r2=1;
+      0:r1=1; 2:r1=0; 2:r2=0;
+      0:r1=1; 2:r1=0; 2:r2=1;
+      0:r1=1; 2:r1=1; 2:r2=0;
+      0:r1=1; 2:r1=1; 2:r2=1;
+      No
+      Witnesses
+      Positive: 0 Negative: 7
+      Condition exists (0:r1=0 /\ 2:r1=1 /\ 2:r2=0)
+      Observation C-peterz Never 0 7
+      Hash=e427f41d9146b2a5445101d3e2fcaa34
+    
+    And the strong and weak model agree.
+    
+    Reported-by: Mark Rutland <mark.rutland@arm.com>
+    Tested-by: Mark Rutland <mark.rutland@arm.com>
+    Signed-off-by: Peter Zijlstra (Intel) <peterz@infradead.org>
+    Cc: Alexander Shishkin <alexander.shishkin@linux.intel.com>
+    Cc: Arnaldo Carvalho de Melo <acme@kernel.org>
+    Cc: Arnaldo Carvalho de Melo <acme@redhat.com>
+    Cc: Jiri Olsa <jolsa@redhat.com>
+    Cc: Linus Torvalds <torvalds@linux-foundation.org>
+    Cc: Peter Zijlstra <peterz@infradead.org>
+    Cc: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+    Cc: Stephane Eranian <eranian@google.com>
+    Cc: Thomas Gleixner <tglx@linutronix.de>
+    Cc: Vince Weaver <vincent.weaver@maine.edu>
+    Cc: Will Deacon <will.deacon@arm.com>
+    Cc: jeremy.linton@arm.com
+    Link: http://lkml.kernel.org/r/20161209135900.GU3174@twins.programming.kicks-ass.net
+    Signed-off-by: Ingo Molnar <mingo@kernel.org>
+
+diff --git a/kernel/events/core.c b/kernel/events/core.c
+index ab15509fab8c..72ce7d63e561 100644
+--- a/kernel/events/core.c
++++ b/kernel/events/core.c
+@@ -2249,7 +2249,7 @@ static int  __perf_install_in_context(void *info)
+ 	struct perf_event_context *ctx = event->ctx;
+ 	struct perf_cpu_context *cpuctx = __get_cpu_context(ctx);
+ 	struct perf_event_context *task_ctx = cpuctx->task_ctx;
+-	bool activate = true;
++	bool reprogram = true;
+ 	int ret = 0;
+ 
+ 	raw_spin_lock(&cpuctx->ctx.lock);
+@@ -2257,27 +2257,26 @@ static int  __perf_install_in_context(void *info)
+ 		raw_spin_lock(&ctx->lock);
+ 		task_ctx = ctx;
+ 
+-		/* If we're on the wrong CPU, try again */
+-		if (task_cpu(ctx->task) != smp_processor_id()) {
+-			ret = -ESRCH;
+-			goto unlock;
+-		}
++		reprogram = (ctx->task == current);
+ 
+ 		/*
+-		 * If we're on the right CPU, see if the task we target is
+-		 * current, if not we don't have to activate the ctx, a future
+-		 * context switch will do that for us.
++		 * If the task is running, it must be running on this CPU,
++		 * otherwise we cannot reprogram things.
++		 *
++		 * If its not running, we don't care, ctx->lock will
++		 * serialize against it becoming runnable.
+ 		 */
+-		if (ctx->task != current)
+-			activate = false;
+-		else
+-			WARN_ON_ONCE(cpuctx->task_ctx && cpuctx->task_ctx != ctx);
++		if (task_curr(ctx->task) && !reprogram) {
++			ret = -ESRCH;
++			goto unlock;
++		}
+ 
++		WARN_ON_ONCE(reprogram && cpuctx->task_ctx && cpuctx->task_ctx != ctx);
+ 	} else if (task_ctx) {
+ 		raw_spin_lock(&task_ctx->lock);
+ 	}
+ 
+-	if (activate) {
++	if (reprogram) {
+ 		ctx_sched_out(ctx, cpuctx, EVENT_TIME);
+ 		add_event_to_ctx(event, ctx);
+ 		ctx_resched(cpuctx, task_ctx);
+@@ -2328,13 +2327,36 @@ perf_install_in_context(struct perf_event_context *ctx,
+ 	/*
+ 	 * Installing events is tricky because we cannot rely on ctx->is_active
+ 	 * to be set in case this is the nr_events 0 -> 1 transition.
++	 *
++	 * Instead we use task_curr(), which tells us if the task is running.
++	 * However, since we use task_curr() outside of rq::lock, we can race
++	 * against the actual state. This means the result can be wrong.
++	 *
++	 * If we get a false positive, we retry, this is harmless.
++	 *
++	 * If we get a false negative, things are complicated. If we are after
++	 * perf_event_context_sched_in() ctx::lock will serialize us, and the
++	 * value must be correct. If we're before, it doesn't matter since
++	 * perf_event_context_sched_in() will program the counter.
++	 *
++	 * However, this hinges on the remote context switch having observed
++	 * our task->perf_event_ctxp[] store, such that it will in fact take
++	 * ctx::lock in perf_event_context_sched_in().
++	 *
++	 * We do this by task_function_call(), if the IPI fails to hit the task
++	 * we know any future context switch of task must see the
++	 * perf_event_ctpx[] store.
+ 	 */
+-again:
++
+ 	/*
+-	 * Cannot use task_function_call() because we need to run on the task's
+-	 * CPU regardless of whether its current or not.
++	 * This smp_mb() orders the task->perf_event_ctxp[] store with the
++	 * task_cpu() load, such that if the IPI then does not find the task
++	 * running, a future context switch of that task must observe the
++	 * store.
+ 	 */
+-	if (!cpu_function_call(task_cpu(task), __perf_install_in_context, event))
++	smp_mb();
++again:
++	if (!task_function_call(task, __perf_install_in_context, event))
+ 		return;
+ 
+ 	raw_spin_lock_irq(&ctx->lock);
+@@ -2348,12 +2370,16 @@ again:
+ 		raw_spin_unlock_irq(&ctx->lock);
+ 		return;
+ 	}
+-	raw_spin_unlock_irq(&ctx->lock);
+ 	/*
+-	 * Since !ctx->is_active doesn't mean anything, we must IPI
+-	 * unconditionally.
++	 * If the task is not running, ctx->lock will avoid it becoming so,
++	 * thus we can safely install the event.
+ 	 */
+-	goto again;
++	if (task_curr(task)) {
++		raw_spin_unlock_irq(&ctx->lock);
++		goto again;
++	}
++	add_event_to_ctx(event, ctx);
++	raw_spin_unlock_irq(&ctx->lock);
+ }
+ 
+ /*
