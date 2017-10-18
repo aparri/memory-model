@@ -15,18 +15,19 @@ the recipes document.  All examples are from v4.13.
 		to interleave the computations.
 
 	b.	Compilers are permitted to use the "as-if" rule.  That is,
-		a compiler can emit whatever code it likes, as long as
-		the results of a single-threaded execution appear just
-		as if the compiler had followed all the relevant rules.
-		To see this, compile with a high level of optimization
-		and run the debugger on the resulting binary.
+		a compiler can emit whatever code it likes for normal
+		accesses, as long as the results of a single-threaded
+		execution appear just as if the compiler had followed
+		all the relevant rules.  To see this, compile with a
+		high level of optimization and run the debugger on the
+		resulting binary.
 
-	c.	If there is only one variable but multiple CPUs, all
-		that variable must be properly aligned and all accesses
-		to that variable must be full sized.  Variables that
-		straddle cachelines or pages void your full-ordering
-		warranty, as do undersized accesses that load from or
-		store to only part of the variable.
+	c.	If there is only one variable but multiple CPUs, that
+		variable must be properly aligned and all accesses to that
+		variable must be full sized.  Variables that straddle
+		cachelines or pages void your full-ordering warranty,
+		as do undersized accesses that load from or store to
+		only part of the variable.
 
 1.	Another simple case: Locking.  [ Assuming you don't think too
 	hard about it, that is! ]
