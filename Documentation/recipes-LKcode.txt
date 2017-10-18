@@ -36,15 +36,16 @@ the recipes document.  All examples are from v4.13.
 		this rule, for example:
 
 		i.	When there is no possibility of a given
-			shared variable being updated, for example,
-			while holding the update-side lock, reads
-			from that variable need not use READ_ONCE().
+			shared variable being updated by some other CPU,
+			for example, while holding the update-side lock,
+			reads from that variable need not use READ_ONCE().
 
 		ii.	When there is no possibility of a given shared
-			variable being either read or updated, for
-			example, when running during early boot, reads
-			from that variable need not use READ_ONCE() and
-			writes to that variable need not use WRITE_ONCE().
+			variable being either read or updated by other
+			CPUs, for example, when running during early
+			boot, reads from that variable need not use
+			READ_ONCE() and writes to that variable need
+			not use WRITE_ONCE().
 
 1.	Another simple case: Locking.  [ Assuming you don't think too
 	hard about it, that is! ]
