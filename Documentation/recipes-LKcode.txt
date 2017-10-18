@@ -29,6 +29,23 @@ the recipes document.  All examples are from v4.13.
 		as do undersized accesses that load from or store to
 		only part of the variable.
 
+	d.	If there are multiple CPUs, accesses to shared variables
+		should use READ_ONCE() and WRITE_ONCE() or stronger
+		to prevent load/store tearing, load/store fusing, and
+		invented loads and stores.  There are exceptions to
+		this rule, for example:
+
+		i.	When there is no possibility of a given
+			shared variable being updated, for example,
+			while holding the update-side lock, reads
+			from that variable need not use READ_ONCE().
+
+		ii.	When there is no possibility of a given shared
+			variable being either read or updated, for
+			example, when running during early boot, reads
+			from that variable need not use READ_ONCE() and
+			writes to that variable need not use WRITE_ONCE().
+
 1.	Another simple case: Locking.  [ Assuming you don't think too
 	hard about it, that is! ]
 
@@ -280,8 +297,31 @@ the recipes document.  All examples are from v4.13.
  *                   sched-out Z
  *                   sched-in X
  *                   UNLOCK rq(1)->lock
- *
- *
+
+Summary:
+
+	CPU0
+
+	smp_store_release(&X->on_cpu, 0); /* from sched-out X */
+	UNLOCK rq(0)->lock
+
+
+	CPU2
+
+	LOCK rq(0)->lock
+	UNLOCK rq(1)->lock
+
+
+	CPU1
+
+	LOCK rq(1)->lock
+	X->on_cpu = 1; /* from sched-in X */
+
+
+	BUG_ON("each LOCK reads from its UNLOCK" && X->on_cpu == 0);
+
+(c.f., Z6.2 in test6.pdf)
+
  *  BLOCKING -- aka. SLEEP + WAKEUP
  *
  * For blocking we (obviously) need to provide the same guarantee as for
@@ -316,8 +356,30 @@ the recipes document.  All examples are from v4.13.
  *
  *                    UNLOCK X->pi_lock
  *   UNLOCK rq(0)->lock
- *
- *
+
+Summary:
+
+	CPU0
+
+	smp_store_release(&X->on_cpu, 0); /* from sched-out X */
+
+
+	CPU1
+
+	smp_cond_load_acquire(&X->on_cpu, !VAL);
+	UNLOCK rq(2)->lock
+
+
+	CPU2
+
+	LOCK rq(2)->lock
+	X->on_cpu = 1; // from sched-in X
+
+
+	BUG_ON("each LOCK reads from its UNLOCK" && X->on_cpu == 0);
+
+(c.f., WWC in test6.pdf)
+
  * However; for wakeups there is a second guarantee we must provide, namely we
  * must observe the state that lead to our wakeup. That is, not only must our
  * task observe its own prior state, it must also observe the stores prior to
