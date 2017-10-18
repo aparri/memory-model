@@ -18,6 +18,18 @@ REQUIREMENTS
 
 See "herdtools7/INSTALL.md" for installation instructions.
 
+Alternatively, Abhishek Bhardwaj has kindly provided a Docker image
+of these tools at "abhishek40/memory-model".  Abhishek suggests the
+following commands to install and use this image:
+
+- Users should install Docker for their distribution.
+- docker run -itd abhishek40/memory-model
+- docker attach <id-emitted-from-the-previous-command>
+
+Gentoo users might wish to make use of Patrick McLean's package:
+
+https://gitweb.gentoo.org/repo/gentoo.git/tree/dev-util/herdtools7
+
 
 ===========
 BASIC USAGE
