@@ -547,11 +547,11 @@ overwrites the initial value comes second; the store which overwrites
 that value comes third, and so on.
 
 You can think of the coherence order as being the order in which the
-stores reach x's location in memory (or if you prefer a more detailed
-view, the order in which the stores get written to x's cache line).
-We write W ->co W' if W comes before W' in the coherence order, that
-is, if the value stored by W gets overwritten, directly or indirectly,
-by the value stored by W'.
+stores reach x's location in memory (or if you prefer a more
+hardware-centric view, the order in which the stores get written to
+x's cache line).  We write W ->co W' if W comes before W' in the
+coherence order, that is, if the value stored by W gets overwritten,
+directly or indirectly, by the value stored by W'.
 
 Coherence order is required to be consistent with program order.  This
 requirement takes the form of four coherency rules:
