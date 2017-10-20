@@ -66,3 +66,56 @@ The "Positive: 1 Negative: 3" and the "Sometimes 1 3" each indicate that
 this litmus test's "exists" clause can be satisfied.
 
 See "herdtools7/doc/" for more information.
+
+
+===========
+DESCRIPTION
+===========
+
+
+Documentation
+	Directory that includes "explanation.txt" which describes
+	the memory model in detail, "recipes.txt" which lists common
+	memory-ordering patterns, and "references.txt" which provides
+	background reading.
+
+linux-kernel.bell
+	Defines the semantics of instructions, including memory
+	references, memory barriers, atomic read-modify-write operations,
+	locking, and RCU.
+
+	More formally, this file (1) lists the subtypes of the various
+	event types used by the memory model and (2) performs RCU
+	read-side critical section nesting analysis.
+
+linux-kernel.cat
+	Specifies what reorderings are forbidden by memory references,
+	memory barriers, atomic read-modify-write operations, and RCU.
+
+	More formally, this file specifies what executions are forbidden
+	by the memory model.  Allowed executions are those which
+	satisfy the model's "coherence", "atomic", "happens-before",
+	"propagation", and "rcu" axioms, which are defined in the file.
+
+linux-kernel.cfg
+	Convenience file that gathers the common-case herd7 command-line
+	arguments.
+
+linux-kernel.def
+	Maps from C-like syntax to herd7's internal litmus-test
+	instruction-set architecture.
+
+litmus-tests
+	Directory containing a few representative litmus tests.
+	A great deal more litmus tests are available at
+	https://github.com/paulmckrcu/litmus.
+
+lock.cat
+	Specifies the reorderings that are forbidden by locking.
+
+	More formally, this file defines a performance-enhanced scheme
+	for generation of the possible reads-from and coherence order
+	relations on the locking primitives.
+
+README
+	This file.
