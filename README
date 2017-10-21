@@ -7,12 +7,18 @@ INTRODUCTION
 ============
 
 The memory model of the Linux kernel written in the "cat" language and
-executable by the "herd7" simulator.
+executable by the (externally provided) "herd7" simulator, allowing
+the state space of small litmus tests to be exhaustively explored.
+In addition, the "klitmus7" tool (also externally provided) may be used
+to convert a litmus test to a Linux kernel module, which in turn allows
+that litmus test to be exercised within the Linux kernel.
 
 
 ============
 REQUIREMENTS
 ============
+
+The "herd7" and "klitmus7" tools must be downloaded separately:
 
   https://github.com/herd/herdtools7
 
@@ -41,12 +47,7 @@ For example, to run MP+poonceonces.litmus:
 
   $ herd7 -conf linux-kernel.cfg litmus-tests/MP+poonceonces.litmus
 
-For another example, to run against the hardware model:
-
-  $ herd7 -conf linux-kernel.cfg -cat linux-kernel-hardware.cat litmus-tests/MP+poonceonces.litmus
-
-This litmus test gives the same result for both models, so both produce
-similar output:
+Here is the corresponding output:
 
   Test MP+poonceonces Allowed
   States 4
@@ -68,21 +69,39 @@ this litmus test's "exists" clause can be satisfied.
 See "herdtools7/doc/" for more information.
 
 
+========
+KLITMUS7
+========
+
+The "klitmus7" tool converts a litmus test into a Linux kernel module,
+which may then be loaded and run.  Here are the commands to do just this
+from the directory containing this memory-model directory:
+
+ $ mkdir mymodules
+ $ klitmus7 -o mymodules memory-model/litmus-tests/*.litmus
+ $ cd mymodules ; make
+ $ sudo sh run.sh
+
+The output lists the states reached, similar to the output of "herd7".
+
+
 ===========
 DESCRIPTION
 ===========
 
-
-Documentation
-	Directory that includes "explanation.txt" which describes
-	the memory model in detail, "recipes.txt" which lists common
-	memory-ordering patterns, and "references.txt" which provides
-	background reading.
+Documentation/explanation.txt
+	Describes the memory model in detail.
+	
+Documentation/recipes.txt
+	Lists common memory-ordering patterns.
+	
+Documentation/references.txt
+	Provides background reading.
 
 linux-kernel.bell
-	Defines the semantics of instructions, including memory
+	Categorizes the relevant instructions, including memory
 	references, memory barriers, atomic read-modify-write operations,
-	locking, and RCU.
+	lock acquisition/release, and RCU operations.
 
 	More formally, this file (1) lists the subtypes of the various
 	event types used by the memory model and (2) performs RCU
@@ -106,12 +125,14 @@ linux-kernel.def
 	instruction-set architecture.
 
 litmus-tests
-	Directory containing a few representative litmus tests.
-	A great deal more litmus tests are available at
-	https://github.com/paulmckrcu/litmus.
+	Directory containing a few representative litmus tests, which
+	are listed in litmus-tests/README.  A great deal more litmus
+	tests are available at https://github.com/paulmckrcu/litmus.
 
 lock.cat
-	Specifies the reorderings that are forbidden by locking.
+	Provides a front-end analysis of lock acquisition and release,
+	for example, associating a lock acquisition with the corresponding
+	release and checking for self-deadlock.
 
 	More formally, this file defines a performance-enhanced scheme
 	for generation of the possible reads-from and coherence order
