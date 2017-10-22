@@ -37,9 +37,9 @@ Gentoo users might wish to make use of Patrick McLean's package:
 https://gitweb.gentoo.org/repo/gentoo.git/tree/dev-util/herdtools7
 
 
-===========
-BASIC USAGE
-===========
+==================
+BASIC USAGE: HERD7
+==================
 
   $ herd7 -conf linux-kernel.cfg [option(s)] <litmus_test(s)>
 
@@ -66,12 +66,12 @@ Here is the corresponding output:
 The "Positive: 1 Negative: 3" and the "Sometimes 1 3" each indicate that
 this litmus test's "exists" clause can be satisfied.
 
-See "herdtools7/doc/" for more information.
+See "herd7 -help" or "herdtools7/doc/" for more information.
 
 
-========
-KLITMUS7
-========
+=====================
+BASIC USAGE: KLITMUS7
+=====================
 
 The "klitmus7" tool converts a litmus test into a Linux kernel module,
 which may then be loaded and run.  Here are the commands to do just this
@@ -83,6 +83,8 @@ from the directory containing this memory-model directory:
  $ sudo sh run.sh
 
 The output lists the states reached, similar to the output of "herd7".
+And, as with "herd7", please see "klitmus7 -help" or "herdtools7/doc/"
+for more information.
 
 
 ===========
