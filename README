@@ -42,9 +42,10 @@ Gentoo users might wish to make use of Patrick McLean's package:
 BASIC USAGE: HERD7
 ==================
 
-  $ herd7 -conf linux-kernel.cfg [option(s)] <litmus_test(s)>
+The memory model is used, in conjunction with "herd7", to exhaustively
+explore the state space of small litmus tests.
 
-For example, to run SB+mbonceonces.litmus:
+For example, to run SB+mbonceonces.litmus against the memory model:
 
   $ herd7 -conf linux-kernel.cfg litmus-tests/SB+mbonceonces.litmus
 
@@ -74,15 +75,34 @@ BASIC USAGE: KLITMUS7
 =====================
 
 The "klitmus7" tool converts a litmus test into a Linux kernel module,
-which may then be loaded and run.  Here are the commands to do just this
-from the directory containing this memory-model directory:
+which may then be loaded and run to validate the memory model.
+
+For example, to run SB+mbonceonces.litmus against hardware:
 
   $ mkdir mymodules
-  $ klitmus7 -o mymodules memory-model/litmus-tests/*.litmus
+  $ klitmus7 -o mymodules litmus-tests/SB+mbonceonces.litmus
   $ cd mymodules ; make
   $ sudo sh run.sh
 
-The output lists the states reached, similar to the output of "herd7".
+The corresponding output includes:
+
+  Test SB+mbonceonces Allowed
+  Histogram (3 states)
+  644580  :>0:r0=1; 1:r0=0;
+  644328  :>0:r0=0; 1:r0=1;
+  711092  :>0:r0=1; 1:r0=1;
+  No
+  Witnesses
+  Positive: 0, Negative: 2000000
+  Condition exists (0:r0=0 /\ 1:r0=0) is NOT validated
+  Hash=d66d99523e2cac6b06e66f4c995ebb48
+  Observation SB+mbonceonces Never 0 2000000
+  Time SB+mbonceonces 0.16
+
+The "Positive: 0 Negative: 2000000" and the "Never 0 2000000" indicate
+that the state specified in this litmus test's "exists" clause has not
+been reached, thus validating the model's verdict.
+
 And, as with "herd7", please see "klitmus7 -help" or "herdtools7/doc/"
 for more information.
 
