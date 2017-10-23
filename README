@@ -9,6 +9,7 @@ INTRODUCTION
 The memory model of the Linux kernel written in the "cat" language and
 executable by the (externally provided) "herd7" simulator, allowing
 the state space of small litmus tests to be exhaustively explored.
+
 In addition, the "klitmus7" tool (also externally provided) may be used
 to convert a litmus test to a Linux kernel module, which in turn allows
 that litmus test to be exercised within the Linux kernel.
@@ -28,13 +29,13 @@ Alternatively, Abhishek Bhardwaj has kindly provided a Docker image
 of these tools at "abhishek40/memory-model".  Abhishek suggests the
 following commands to install and use this image:
 
-- Users should install Docker for their distribution.
-- docker run -itd abhishek40/memory-model
-- docker attach <id-emitted-from-the-previous-command>
+  - Users should install Docker for their distribution.
+  - docker run -itd abhishek40/memory-model
+  - docker attach <id-emitted-from-the-previous-command>
 
 Gentoo users might wish to make use of Patrick McLean's package:
 
-https://gitweb.gentoo.org/repo/gentoo.git/tree/dev-util/herdtools7
+  https://gitweb.gentoo.org/repo/gentoo.git/tree/dev-util/herdtools7
 
 
 ==================
@@ -77,10 +78,10 @@ The "klitmus7" tool converts a litmus test into a Linux kernel module,
 which may then be loaded and run.  Here are the commands to do just this
 from the directory containing this memory-model directory:
 
- $ mkdir mymodules
- $ klitmus7 -o mymodules memory-model/litmus-tests/*.litmus
- $ cd mymodules ; make
- $ sudo sh run.sh
+  $ mkdir mymodules
+  $ klitmus7 -o mymodules memory-model/litmus-tests/*.litmus
+  $ cd mymodules ; make
+  $ sudo sh run.sh
 
 The output lists the states reached, similar to the output of "herd7".
 And, as with "herd7", please see "klitmus7 -help" or "herdtools7/doc/"
