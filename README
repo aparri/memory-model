@@ -88,9 +88,9 @@ And, as with "herd7", please see "klitmus7 -help" or "herdtools7/doc/"
 for more information.
 
 
-===========
-DESCRIPTION
-===========
+====================
+DESCRIPTION OF FILES
+====================
 
 Documentation/explanation.txt
 	Describes the memory model in detail.
@@ -134,8 +134,8 @@ litmus-tests
 
 lock.cat
 	Provides a front-end analysis of lock acquisition and release,
-	for example, associating a lock acquisition with the corresponding
-	release and checking for self-deadlock.
+	for example, associating a lock acquisition with the preceding
+	and following releases and checking for self-deadlock.
 
 	More formally, this file defines a performance-enhanced scheme
 	for generation of the possible reads-from and coherence order
