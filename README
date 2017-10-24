@@ -6,9 +6,10 @@
 INTRODUCTION
 ============
 
-The memory model of the Linux kernel written in the "cat" language and
-executable by the (externally provided) "herd7" simulator, allowing
-the state space of small litmus tests to be exhaustively explored.
+This directory contains the memory model of the Linux kernel, written
+in the "cat" language and executable by the (externally provided)
+"herd7" simulator, which exhaustively explores the state space of
+small litmus tests.
 
 In addition, the "klitmus7" tool (also externally provided) may be used
 to convert a litmus test to a Linux kernel module, which in turn allows
@@ -36,6 +37,9 @@ following commands to install and use this image:
 Gentoo users might wish to make use of Patrick McLean's package:
 
   https://gitweb.gentoo.org/repo/gentoo.git/tree/dev-util/herdtools7
+
+These packages may not be up-to-date with respect to the GitHub
+repository.
 
 
 ==================
@@ -100,8 +104,8 @@ The corresponding output includes:
   Time SB+mbonceonces 0.16
 
 The "Positive: 0 Negative: 2000000" and the "Never 0 2000000" indicate
-that the state specified in this litmus test's "exists" clause has not
-been reached.
+that during two million trials, the state specified in this litmus
+test's "exists" clause was not reached.
 
 And, as with "herd7", please see "klitmus7 -help" or "herdtools7/doc/"
 for more information.
