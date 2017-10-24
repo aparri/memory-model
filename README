@@ -75,7 +75,7 @@ BASIC USAGE: KLITMUS7
 =====================
 
 The "klitmus7" tool converts a litmus test into a Linux kernel module,
-which may then be loaded and run to validate the memory model.
+which may then be loaded and run.
 
 For example, to run SB+mbonceonces.litmus against hardware:
 
@@ -101,7 +101,7 @@ The corresponding output includes:
 
 The "Positive: 0 Negative: 2000000" and the "Never 0 2000000" indicate
 that the state specified in this litmus test's "exists" clause has not
-been reached, thus validating the model's verdict.
+been reached.
 
 And, as with "herd7", please see "klitmus7 -help" or "herdtools7/doc/"
 for more information.
