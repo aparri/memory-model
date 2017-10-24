@@ -709,14 +709,14 @@ For the most part, executing an instruction requires a CPU to perform
 only internal operations.  However, loads, stores, and fences involve
 more.
 
-When a CPU executes a store instruction, it tells the memory subsystem
+When CPU C executes a store instruction, it tells the memory subsystem
 to store a certain value at a certain location.  The memory subsystem
 propagates the store to all the other CPUs as well as to RAM.  (As a
-special case, we say that a store propagates to its own CPU at the
+special case, we say that the store propagates to its own CPU at the
 time it is executed.)  The memory subsystem also determines where the
 store falls in the location's coherence order.  In particular, it must
 arrange for the store to be co-later (i.e., to overwrite) any other
-store to the same location which has already propagated to that CPU.
+store to the same location which has already propagated to CPU C.
 
 When a CPU executes a load instruction R, it first checks to see
 whether there are any as-yet unexecuted store instructions, for the
