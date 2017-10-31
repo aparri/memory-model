@@ -326,7 +326,7 @@ Optimizing compilers have great freedom in the way they translate
 source code to object code.  They are allowed to apply transformations
 that add memory accesses, eliminate accesses, combine them, split them
 into pieces, or move them around.  Faced with all these possibilities,
-the LMKM basically gives up.  It insists that the code it analyzes
+the LKMM basically gives up.  It insists that the code it analyzes
 must contain no ordinary accesses to shared memory; all accesses must
 be performed using READ_ONCE(), WRITE_ONCE(), or one of the other
 atomic or synchronization primitives.  These primitives prevent a
