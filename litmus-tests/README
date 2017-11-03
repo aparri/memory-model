@@ -71,7 +71,7 @@ R+poonceonces.litmus
 
 SB+mbonceonces.litmus
 	This is the fully ordered (again, via smp_mb() version of store
-	buffering, which fors the core of Dekker's mutual-exclusion
+	buffering, which forms the core of Dekker's mutual-exclusion
 	algorithm.
 
 SB+poonceonces.litmus
