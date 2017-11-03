@@ -16,11 +16,13 @@ added by this patch.  The herd7 executable takes the other files as input,
 and all of these files collectively define the Linux-kernel memory memory
 model.  A brief description of each of these other files is provided in
 the README file.  Please note that herd7 is not part of this submission,
-but is freely available from http://diy.inria.fr/sources/index.html.
+but is freely available from http://diy.inria.fr/sources/index.html
+(and via "git" at https://github.com/herd/herdtools7).
 
 A second tool is klitmus7, which converts litmus tests to loadable
 kernel modules for direct testing.  As with herd7, the klitmus7
-code is freely available from http://diy.inria.fr/sources/index.html.
+code is freely available from http://diy.inria.fr/sources/index.html
+(and via "git" at https://github.com/herd/herdtools7).
 
 Of course, litmus tests are not always the best way to fully understand a
 memory model, so this patch also includes Documentation/explanation.txt,
