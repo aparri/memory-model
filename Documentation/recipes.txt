@@ -138,9 +138,9 @@ Consider this example:
 	void CPU1(void)
 	{
 		spin_lock(&mylock);
-		r0 = READ_ONCE(y);
+		r1 = READ_ONCE(y);
 		WRITE_ONCE(z, 1);
-		r1 = READ_ONCE(z);
+		spin_unlock(&mylock);
 	}
 
 	void CPU2(void)
@@ -151,7 +151,7 @@ Consider this example:
 	}
 
 Counter-intuitive though it might be, it is quite possible to have
-the final value of r0 be 1, the final value of z be 2, and the final
+the final value of r1 be 1, the final value of z be 2, and the final
 value of r2 be zero.  The reason for this surprising outcome is that
 CPU2() never acquired the lock, and thus did not benefit from the
 lock's ordering properties.
@@ -172,9 +172,9 @@ of smp_mb__after_spinlock():
 	{
 		spin_lock(&mylock);
 		smp_mb__after_spinlock();
-		r0 = READ_ONCE(y);
+		r1 = READ_ONCE(y);
 		WRITE_ONCE(z, 1);
-		r1 = READ_ONCE(z);
+		spin_unlock(&mylock);
 	}
 
 	void CPU2(void)
@@ -485,7 +485,7 @@ than full barriers:
 	void CPU1(void)
 	{
 		WRITE_ONCE(y, 1);
-		smp_mb
+		smp_mb();
 		r1 = READ_ONCE(x);
 	}
 
