@@ -1,0 +1,712 @@
+This document provides "recipes", that is litmus tests for commonly
+occuring situations, as well as a few illustrating subtly broken
+attractive nuisances.  Many of these recipes include illustrative example
+code from v4.13 of the Linux kernel.
+
+The first section covers simple special cases, the second section
+takes off the training wheels to cover more involved examples,
+and the third section provides a few rules of thumb.
+
+
+Simple special cases
+====================
+
+This section presents two simple special cases, the first being where
+there is only one CPU or only one location, and the second being use
+of that old concurrency workhorse, locking.
+
+
+Single CPU or single location
+-----------------------------
+
+If there is only one CPU on the one hand or only one variable
+on the other, the code will execute in order.  There are (as
+usual) some things to be careful of:
+
+1.	There are some aspects of the C language that are unordered.
+	For example, in the expression "f(x) + g(y)", the order in which
+	f and g are called is not defined; the object code is allowed
+	to use either order or even to interleave the computations.
+
+2.	Compilers are permitted to use the "as-if" rule.  That is, a
+	compiler can emit whatever code it likes for normal accesses,
+	as long as the results of a single-threaded execution appear
+	just as if the compiler had followed all the relevant rules.
+	To see this, compile with a high level of optimization and run
+	the debugger on the resulting binary.
+
+3.	If there is only one variable but multiple CPUs, that variable
+	must be properly aligned and all accesses to that variable must
+	be full sized.	Variables that straddle cachelines or pages void
+	your full-ordering warranty, as do undersized accesses that load
+	from or store to only part of the variable.
+
+4.	If there are multiple CPUs, accesses to shared variables should
+	use READ_ONCE() and WRITE_ONCE() or stronger to prevent load/store
+	tearing, load/store fusing, and invented loads and stores.
+	There are exceptions to this rule, for example:
+
+	i.	When there is no possibility of a given shared variable
+		being updated by some other CPU, for example, while
+		holding the update-side lock, reads from that variable
+		need not use READ_ONCE().
+
+	ii.	When there is no possibility of a given shared variable
+		being either read or updated by other CPUs, for example,
+		when running during early boot, reads from that variable
+		need not use READ_ONCE() and writes to that variable
+		need not use WRITE_ONCE().
+
+
+Locking
+-------
+
+Locking is well-known and straightforward, at least if you don't think
+about it too hard.  And the basic rule is indeed quite simple: Any CPU that
+has acquired a given lock sees any changes previously made by any CPU
+before it released that same lock.  Note that this statement is a bit
+stronger than "Any CPU holding a given lock sees all changes made by any
+CPU during the time that CPU was holding this same lock".  For example,
+consider the following pair of code fragments:
+
+	/* See MP+polocks.litmus. */
+	void CPU0(void)
+	{
+		WRITE_ONCE(x, 1);
+		spin_lock(&mylock);
+		WRITE_ONCE(y, 1);
+		spin_unlock(&mylock);
+	}
+
+	void CPU1(void)
+	{
+		spin_lock(&mylock);
+		r0 = READ_ONCE(y);
+		spin_unlock(&mylock);
+		r1 = READ_ONCE(x);
+	}
+
+The basic rule guarantees that if CPU0() acquires mylock before CPU1(),
+then both r0 and r1 must be set to the value 1.  This also has the
+consequence that if the final value of r0 is equal to 1, then the final
+value of r1 must also be equal to 1.  In contrast, the weaker rule would
+say nothing about the final value of r1.
+
+The converse to the basic rule also holds, as illustrated by the
+following litmus test: 
+
+	/* See MP+porevlocks.litmus. */
+	void CPU0(void)
+	{
+		r0 = READ_ONCE(y);
+		spin_lock(&mylock);
+		r1 = READ_ONCE(x);
+		spin_unlock(&mylock);
+	}
+
+	void CPU1(void)
+	{
+		spin_lock(&mylock);
+		WRITE_ONCE(x, 1);
+		spin_unlock(&mylock);
+		WRITE_ONCE(y, 1);
+	}
+
+This converse to the basic rule guarantees that if CPU0() acquires
+mylock before CPU1(), then both r0 and r1 must be set to the value 0.
+This also has the consequence that if the final value of r1 is equal
+to 0, then the final value of r0 must also be equal to 0.  In contrast,
+the weaker rule would say nothing about the final value of r0.
+
+These examples show only a single pair of CPUs, but the effects of the
+locking basic rule extend across multiple acquisitions of a given lock
+across multiple CPUs.
+
+However, it is not necessarily the case that accesses ordered by
+locking will be seen as ordered to CPUs not holding that lock.
+Consider this example:
+
+	/* See Z6.0+pooncelock+pooncelock+pombonce.litmus. */
+	void CPU0(void)
+	{
+		spin_lock(&mylock);
+		WRITE_ONCE(x, 1);
+		WRITE_ONCE(y, 1);
+		spin_unlock(&mylock);
+	}
+
+	void CPU1(void)
+	{
+		spin_lock(&mylock);
+		r0 = READ_ONCE(y);
+		WRITE_ONCE(z, 1);
+		r1 = READ_ONCE(z);
+	}
+
+	void CPU2(void)
+	{
+		WRITE_ONCE(z, 2);
+		smp_mb();
+		r2 = READ_ONCE(x);
+	}
+
+Counter-intuitive though it might be, it is quite possible to have
+the final value of r0 be 1, the final value of z be 2, and the final
+value of r2 be zero.  The reason for this surprising outcome is that
+CPU2() never acquired the lock, and thus did not benefit from the
+lock's ordering properties.
+
+Ordering can be extended to CPUs not holding the lock by careful use
+of smp_mb__after_spinlock():
+
+	/* See Z6.0+pooncelock+poonceLock+pombonce.litmus. */
+	void CPU0(void)
+	{
+		spin_lock(&mylock);
+		WRITE_ONCE(x, 1);
+		WRITE_ONCE(y, 1);
+		spin_unlock(&mylock);
+	}
+
+	void CPU1(void)
+	{
+		spin_lock(&mylock);
+		smp_mb__after_spinlock();
+		r0 = READ_ONCE(y);
+		WRITE_ONCE(z, 1);
+		r1 = READ_ONCE(z);
+	}
+
+	void CPU2(void)
+	{
+		WRITE_ONCE(z, 2);
+		smp_mb();
+		r2 = READ_ONCE(x);
+	}
+
+This addition of smp_mb__after_spinlock() strengthens the lock acquisition
+sufficiently to rule out the counter-intuitive outcome.
+
+
+Taking off the training wheels
+==============================
+
+This section looks at more complex examples, including message passing,
+load buffering, release-acquire chains, store buffering, write plus
+read-write coherence, and finally context switching and task migration.
+Many classes of litmus tests have abbreviated names, which are may be
+found here: https://www.cl.cam.ac.uk/~pes20/ppc-supplemental/test6.pdf
+
+
+Message passing (MP)
+--------------------
+
+The MP pattern has one CPU execute a pair of stores to a pair of variables
+and another CPU execute a pair of loads to this same pair of variables,
+but in the opposite order.  The usual goal is that the second store return
+the value stored by the first store.  In the absence of any ordering,
+this goal will not be met, as can be seen in the MP+poonceonces.litmus
+litmus test.  This section therefore looks at a number of ways of meeting
+this goal.
+
+
+Release and acquire
+~~~~~~~~~~~~~~~~~~~
+
+Use of smp_store_release() and smp_load_acquire() is one way to force
+the desired MP ordering.  The general approach is shown below:
+
+	/* See MP+oncerel+acqonce.litmus. */
+	void CPU0(void)
+	{
+		WRITE_ONCE(x, 1);
+		smp_store_release(&y, 1);
+	}
+
+	void CPU1(void)
+	{
+		r0 = smp_load_acquire(&y);
+		r1 = READ_ONCE(x);
+	}
+
+The smp_store_release() macro orders any prior accesses against the
+store, while the smp_load_acquire macro orders the load against any
+subsequent accesses.  Therefore, if the final value of r0 is the value 1,
+the final value of r1 must also be the value 1.
+
+The init_stack_slab() function in lib/stackdepot.c uses release-acquire
+in this way to safely initialize of a slab of the stack.  Working out
+the mutual-exclusion design is left as an exercise for the reader.
+
+
+Assign and dereference
+~~~~~~~~~~~~~~~~~~~~~~
+
+Use of rcu_assign_pointer() and rcu_dereference() is quite similar to the
+use of smp_store_release() and smp_load_acquire(), except that both
+rcu_assign_pointer() and rcu_dereference() operate on RCU-protected
+pointers.  The general approach is shown below:
+
+	/* See MP+onceassign+derefonce.litmus. */
+	int z;
+	int *y = &z;
+	int x;
+
+	void CPU0(void)
+	{
+		WRITE_ONCE(x, 1);
+		rcu_assign_pointer(y, &x);
+	}
+
+	void CPU1(void)
+	{
+		r0 = rcu_dereference(y);
+		r1 = READ_ONCE(*r0);
+	}
+
+The rcu_assign_pointer() macro has the same ordering properties as does
+smp_store_release(), but the rcu_dereference() macro orders the load only
+against later accesses that depend on the value loaded.  A dependency
+is present if the value loaded determines the address of a later access
+(address dependency, as shown above), the value stored by a later store
+(data dependency), or whether or not the later access is executed in the
+first place (control dependency).  Note that the term "data dependency"
+is sometimes used to cover both address and data dependencies.  As a
+result of all of this, if the final value of r0 is &x, then the final
+value of r1 must be the value 1.
+
+The expand_to_next_prime() function invokes rcu_assign_pointer(), and the
+next_prime_number() function invokes rcu_dereference().  This mediates
+access to a bit vector that is expanded as additional primes are needed.
+These two functions are in lib/prime_numbers.c.
+
+
+Write and read memory barriers
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+It is usually better to use smp_store_release() instead of smp_wmb()
+and to use smp_load_acquire() instead of smp_rmb().  However, the older
+smp_wmb() and smp_rmb() APIs are still heavily used, so it is important
+to understand their use cases.  The general approach is shown below:
+
+	/* See MP+wmbonceonce+rmbonceonce.litmus. */
+	void CPU0(void)
+	{
+		WRITE_ONCE(x, 1);
+		smp_wmb();
+		WRITE_ONCE(y, 1);
+	}
+
+	void CPU1(void)
+	{
+		r0 = READ_ONCE(y);
+		smp_rmb();
+		r1 = READ_ONCE(x);
+	}
+
+The smp_wmb() macro orders prior stores against later stores, and the
+smp_rmb() macro orders prior loads against later loads.  Therefore, if
+the final value of r0 is the value 1, the final value of r1 must also
+be the value 1.
+
+The the xlog_state_switch_iclogs() function in fs/xfs/xfs_log.c contains
+the following write-side code fragment:
+
+	log->l_curr_block -= log->l_logBBsize;
+	ASSERT(log->l_curr_block >= 0);
+	smp_wmb();
+	log->l_curr_cycle++;
+
+And the xlog_valid_lsn() function in fs/xfs/xfs_log_priv.h contains
+the corresponding read-side code fragment:
+
+	cur_cycle = ACCESS_ONCE(log->l_curr_cycle);
+	smp_rmb();
+	cur_block = ACCESS_ONCE(log->l_curr_block);
+
+Alternatively, consider the following comment in function
+perf_output_put_handle() in kernel/events/ring_buffer.c:
+
+	 *   kernel				user
+	 *
+	 *   if (LOAD ->data_tail) {		LOAD ->data_head
+	 *			(A)		smp_rmb()	(C)
+	 *	STORE $data			LOAD $data
+	 *	smp_wmb()	(B)		smp_mb()	(D)
+	 *	STORE ->data_head		STORE ->data_tail
+	 *   }
+
+The B/C pairing is an example of the MP pattern using smp_wmb() on the
+write side and smp_rmb() on the read side.
+
+Of course, given that smp_mb() is strictly stronger than either smp_wmb()
+or smp_rmb(), any code fragment that would work with smp_rmb() and
+smp_wmb() would also work with smp_mb() replacing either or both of the
+weaker barriers.
+
+
+Load buffering (LB)
+-------------------
+
+The LB pattern has one CPU load from one variable, then store to a second
+variable, while another CPU loads from the second variable and then stores
+to the first variable.  The usual goal is that the at least one of the
+loads return the initialization-time value for the corresponding variable.
+In the absence of any ordering, it is quite possible that each load
+will return the value from the corresponding store, as can be seen in
+the LB+poonceonces.litmus litmus test.  This section therefore looks at
+one way of avoiding this counter-intuitive outcome, through use of
+a control dependency paired with a full memory barrier:
+
+	/* See LB+ctrlonces+mbonces.litmus. */
+	void CPU0(void)
+	{
+		r0 = READ_ONCE(x);
+		if (r0)
+			WRITE_ONCE(y, 1);
+	}
+
+	void CPU1(void)
+	{
+		r1 = READ_ONCE(y);
+		smp_mb();
+		WRITE_ONCE(x, 1);
+	}
+
+This pairing of a control dependency in CPU0() with a full memory
+barrier in CPU1() prevents the counter-intuitive outcome where both
+r0 and r1 end up with final values of 1.
+
+The A/D pairing from the ring-buffer use case shown earlier also
+illustrates LB, that is, the comment in perf_output_put_handle() in
+kernel/events/ring_buffer.c, with a control dependency on the kernel
+side and a full memory barrier on the user side:
+
+	 *   kernel				user
+	 *
+	 *   if (LOAD ->data_tail) {		LOAD ->data_head
+	 *			(A)		smp_rmb()	(C)
+	 *	STORE $data			LOAD $data
+	 *	smp_wmb()	(B)		smp_mb()	(D)
+	 *	STORE ->data_head		STORE ->data_tail
+	 *   }
+	 *
+	 * Where A pairs with D, and B pairs with C.
+
+The kernel's control dependency between the load from ->data_tail
+and te store to data combined with the user's full memory barrier
+between the load from data and the store to ->data_tail prevents
+the counter-intuitive outcome where the kernel overwrites the data
+before the user gets done loading it.
+
+
+Release-acquire chains
+----------------------
+
+Release-acquire chains are a low-overhead, flexible, and easy-to-use
+method of maintaining order.  However, they do have some limitations that
+need to be fully understood.  Here is an example that maintains order:
+
+	/* See ISA2+pooncerelease+poacquirerelease+poacquireonce.litmus. */
+	void CPU0(void)
+	{
+		WRITE_ONCE(x, 1);
+		smp_store_release(&y, 1);
+	}
+
+	void CPU1(void)
+	{
+		r1 = smp_load_acquire(y);
+		smp_store_release(&z, 1);
+	}
+
+	void CPU2(void)
+	{
+		r2 = smp_load_acquire(z);
+		r3 = READ_ONCE(x);
+	}
+
+In this case, if r1 and r2 both have final values of 1, then r3 must
+also have a final value of 1.
+
+The ordering in this example is stronger than it needs to be.  For
+example, ordering would still be preserved if CPU1()'s smp_load_acquire()
+invocation was replaced with READ_ONCE().
+
+It is tempting to assume that the order of CPU0()'s store to x is
+globally ordered with CPU1()'s store to z, but this is not the case:
+
+	/* See Z6.0+pooncerelease+poacquirerelease+pombonce.litmus. */
+	void CPU0(void)
+	{
+		WRITE_ONCE(x, 1);
+		smp_store_release(&y, 1);
+	}
+
+	void CPU1(void)
+	{
+		r1 = smp_load_acquire(y);
+		smp_store_release(&z, 1);
+	}
+
+	void CPU2(void)
+	{
+		WRITE_ONCE(z, 2);
+		smp_mb();
+		r2 = READ_ONCE(x);
+	}
+
+One might hope that if the final value of r1 is 1 and the final value
+of z is 2, then the final value of r2 must also be 1, but the
+counter-intuitive outcome really is possible.  This situation is
+accounted for in the rules of thumb below.
+
+Despite this limitation, release-acquire chains low-overhead are quite
+simple and powerful, at least as memory-ordering mechanisms go.
+
+
+Store buffering
+---------------
+
+Store buffering can be thought of as upside-down load buffering, so
+that one CPU first stores to one variable and then loads from a second
+variable, while another CPU first stores to the second variable and then
+loads from the first variable.  Preserving order requires nothing less
+than full barriers:
+
+	/* See SB+mbonceonces.litmus. */
+	void CPU0(void)
+	{
+		WRITE_ONCE(x, 1);
+		smp_mb();
+		r0 = READ_ONCE(y);
+	}
+
+	void CPU1(void)
+	{
+		WRITE_ONCE(y, 1);
+		smp_mb
+		r1 = READ_ONCE(x);
+	}
+
+Omitting either full barrier will allow both r0 and r1 to have final
+values of 0, but providing both full barriers as shown above prevents
+this counter-intuitive outcome.
+
+This pattern most famously appears as part of Dekker's locking
+algorithm, but it has a much more practical use within the Linux kernel
+of ordering wakeups.  The following comment taken from waitqueue_active()
+in include/linux/wait.h shows the canonical pattern:
+
+ *      CPU0 - waker                    CPU1 - waiter
+ *
+ *                                      for (;;) {
+ *      @cond = true;                     prepare_to_wait(&wq_head, &wait, state);
+ *      smp_mb();                         // smp_mb() from set_current_state()
+ *      if (waitqueue_active(wq_head))         if (@cond)
+ *        wake_up(wq_head);                      break;
+ *                                        schedule();
+ *                                      }
+ *                                      finish_wait(&wq_head, &wait);
+
+Note that prepare_to_wait() does the both the write and the
+set_current_state() that contains the smp_mb().  The read is the
+waitqueue_active() on the one hand and the "if (@cond)" on the other.
+
+Note also that use of locking can greatly simplify this pattern.
+
+6.	W+RWC+porel+mb+mb  @@@  I intend to drop this one.  Nice
+	history, but rather obscure pattern.  And if the pattern
+	hadn't been obscure, Peter never would have needed to resort
+	to herd7.  ;-)
+
+	See recipes-LKcode-63cae12bce986.txt.
+
+	Mostly of historical interest -- as far as I know, this commit
+	was the first to contain a litmus test.
+
+7.	Context switch and migration.  A bit specialized, so might leave
+	this one out.  @@@  And I do intend to drop this one because
+	it is a bit on the advanced side.
+
+	When a thread moves from one CPU to another to another, the
+	scheduler is required to do whatever is necessary for the thread
+	to see any prior accesses that it executed on other CPUs.  This
+	includes "interesting" interactions with wake_up() shown in the
+	following comment from try_to_wake_up() in kernel/sched/core.c:
+
+ * Notes on Program-Order guarantees on SMP systems.
+ *
+ *  MIGRATION
+ *
+ * The basic program-order guarantee on SMP systems is that when a task [t]
+ * migrates, all its activity on its old CPU [c0] happens-before any subsequent
+ * execution on its new CPU [c1].
+ *
+ * For migration (of runnable tasks) this is provided by the following means:
+ *
+ *  A) UNLOCK of the rq(c0)->lock scheduling out task t
+ *  B) migration for t is required to synchronize *both* rq(c0)->lock and
+ *     rq(c1)->lock (if not at the same time, then in that order).
+ *  C) LOCK of the rq(c1)->lock scheduling in task
+ *
+ * Transitivity guarantees that B happens after A and C after B.
+ * Note: we only require RCpc transitivity.
+ * Note: the CPU doing B need not be c0 or c1
+ *
+ * Example:
+ *
+ *   CPU0            CPU1            CPU2
+ *
+ *   LOCK rq(0)->lock
+ *   sched-out X
+ *   sched-in Y
+ *   UNLOCK rq(0)->lock
+ *
+ *                                   LOCK rq(0)->lock // orders against CPU0
+ *                                   dequeue X
+ *                                   UNLOCK rq(0)->lock
+ *
+ *                                   LOCK rq(1)->lock
+ *                                   enqueue X
+ *                                   UNLOCK rq(1)->lock
+ *
+ *                   LOCK rq(1)->lock // orders against CPU2
+ *                   sched-out Z
+ *                   sched-in X
+ *                   UNLOCK rq(1)->lock
+
+Summary:
+
+	CPU0
+
+	smp_store_release(&X->on_cpu, 0); /* from sched-out X */
+	UNLOCK rq(0)->lock
+
+
+	CPU2
+
+	LOCK rq(0)->lock
+	UNLOCK rq(1)->lock
+
+
+	CPU1
+
+	LOCK rq(1)->lock
+	X->on_cpu = 1; /* from sched-in X */
+
+
+	BUG_ON("each LOCK reads from its UNLOCK" && X->on_cpu == 0);
+
+(c.f., Z6.2 in test6.pdf)
+
+ *  BLOCKING -- aka. SLEEP + WAKEUP
+ *
+ * For blocking we (obviously) need to provide the same guarantee as for
+ * migration. However the means are completely different as there is no lock
+ * chain to provide order. Instead we do:
+ *
+ *   1) smp_store_release(X->on_cpu, 0)
+ *   2) smp_cond_load_acquire(!X->on_cpu)
+ *
+ * Example:
+ *
+ *   CPU0 (schedule)  CPU1 (try_to_wake_up) CPU2 (schedule)
+ *
+ *   LOCK rq(0)->lock LOCK X->pi_lock
+ *   dequeue X
+ *   sched-out X
+ *   smp_store_release(X->on_cpu, 0);
+ *
+ *                    smp_cond_load_acquire(&X->on_cpu, !VAL);
+ *                    X->state = WAKING
+ *                    set_task_cpu(X,2)
+ *
+ *                    LOCK rq(2)->lock
+ *                    enqueue X
+ *                    X->state = RUNNING
+ *                    UNLOCK rq(2)->lock
+ *
+ *                                          LOCK rq(2)->lock // orders against CPU1
+ *                                          sched-out Z
+ *                                          sched-in X
+ *                                          UNLOCK rq(2)->lock
+ *
+ *                    UNLOCK X->pi_lock
+ *   UNLOCK rq(0)->lock
+
+Summary:
+
+	CPU0
+
+	smp_store_release(&X->on_cpu, 0); /* from sched-out X */
+
+
+	CPU1
+
+	smp_cond_load_acquire(&X->on_cpu, !VAL);
+	UNLOCK rq(2)->lock
+
+
+	CPU2
+
+	LOCK rq(2)->lock
+	X->on_cpu = 1; // from sched-in X
+
+
+	BUG_ON("each LOCK reads from its UNLOCK" && X->on_cpu == 0);
+
+(c.f., WWC in test6.pdf)
+
+ * However; for wakeups there is a second guarantee we must provide, namely we
+ * must observe the state that lead to our wakeup. That is, not only must our
+ * task observe its own prior state, it must also observe the stores prior to
+ * its wakeup.
+ *
+ * This means that any means of doing remote wakeups must order the CPU doing
+ * the wakeup against the CPU the task is going to end up running on. This,
+ * however, is already required for the regular Program-Order guarantee above,
+ * since the waking CPU is the one issueing the ACQUIRE (smp_cond_load_acquire).
+
+
+Rule of thumb
+=============
+
+There might seem to be no pattern governing what ordering primitives are
+needed in which situations, but this is not the case.  There is a pattern
+that based on the relation between the accesses linking successive CPUs
+in a given litmus test.  There are three types of linkage:
+
+1.	Write-to-read, where the next CPU reads the value that the
+	previous CPU wrote.  The LB litmus-test patterns contain only
+	this type of relation.	In formal memory-modeling texts, this
+	relation is called "reads from", and is usually abbreviated "rf".
+
+2.	Read-to-write, where the next CPU writes to the value that the
+	previous CPU read.  The SB litmus test contains only this type
+	of relation.  In formal memory-modeling texts, this relation is
+	often called "from read", and is sometimes abbreviated "fr".
+
+3.	Write-to-write, where the next CPU overwrites the value written
+	by the previous CPU.  The Z6.0 litmus test pattern contains a
+	write-to-write relation between the last access of CPU1() and
+	the first access of CPU2().  In formal memory-modeling texts,
+	this relation is often called "coherence order", and is sometimes
+	abbreviated "co".
+
+The required strength of memory ordering within a given CPU depends
+on the types of relations linking the litmus test in question.
+
+If all links are write-to-read links, then the weakest possible
+ordering within each CPU suffices.  For example, in the LB litmus
+test, a control dependency was enough to do the job.
+
+If all but one of the links are write-to-read links, then a
+release-acquire chain suffices.  Both the MP and the ISA2 litmus
+tests illustrate this case.
+
+If more than one of the links are something other than
+write-to-read links, then a full memory barrier is required between
+each successive pair of non-write-to-read links.  This case is
+illustrated by the Z6.0 litmus tests, both in the locking and in
+the release-acquire sections.

@@ -1,0 +1,24 @@
+C MP+oncerel+acqonce
+
+{
+y=z;
+z=0;
+0:r1=x;
+}
+
+P0(int *x, int *y)
+{
+	WRITE_ONCE(*x, 1);
+	smp_store_release(y, r1);
+}
+
+P1(int *x, int *y)
+{
+	int r0;
+	int r1;
+
+	r0 = smp_load_acquire(y);
+	r1 = READ_ONCE(*r0);
+}
+
+exists (1:r0=x /\ 1:r1=0)
