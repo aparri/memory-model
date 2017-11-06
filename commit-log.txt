@@ -14,10 +14,15 @@ The main tool is herd7, together with the linux-kernel.bell,
 linux-kernel.cat, linux-kernel.cfg, linux-kernel.def, and lock.cat files
 added by this patch.  The herd7 executable takes the other files as input,
 and all of these files collectively define the Linux-kernel memory memory
-model.  A brief description of each of these other files is provided in
-the README file.  Please note that herd7 is not part of this submission,
-but is freely available from http://diy.inria.fr/sources/index.html
-(and via "git" at https://github.com/herd/herdtools7).
+model.  A brief description of each of these other files is provided
+in the README file.  Although this tool does have its limitations,
+which are documented in the README file, it does improve on the version
+reported on in the LWN series (https://lwn.net/Articles/718628/ and
+https://lwn.net/Articles/720550/) by supporting locking and arithmetic,
+including a much wider variety of read-modify-write atomic operations.
+Please note that herd7 is not part of this submission, but is freely
+available from http://diy.inria.fr/sources/index.html (and via "git"
+at https://github.com/herd/herdtools7).
 
 A second tool is klitmus7, which converts litmus tests to loadable
 kernel modules for direct testing.  As with herd7, the klitmus7
