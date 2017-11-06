@@ -692,7 +692,8 @@ in a given litmus test.  There are three types of linkage:
 	write-to-write relation between the last access of CPU1() and
 	the first access of CPU2().  In formal memory-modeling texts,
 	this relation is often called "coherence order", and is sometimes
-	abbreviated "co".
+	abbreviated "co".  In the C++ standard, it is instead called
+	"modification order", and often abbreviated "mo".
 
 The required strength of memory ordering within a given CPU depends
 on the types of relations linking the litmus test in question.
