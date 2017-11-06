@@ -205,5 +205,5 @@ its limitations:
 	the linux-kernel.defs file.
 
 Some of these limitations may be relaxed over time, but others are more
-likely to be addressed by incorporating the Linux-kernel memory model
-into other tools.
+likely to be addressed by incorporating the Linux-kernel memory model into
+other tools.  More details are available in Documentation/explanation.txt.
