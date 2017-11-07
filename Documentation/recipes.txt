@@ -217,7 +217,7 @@ Release and acquire
 Use of smp_store_release() and smp_load_acquire() is one way to force
 the desired MP ordering.  The general approach is shown below:
 
-	/* See MP+oncerel+acqonce.litmus. */
+	/* See MP+pooncerelease+poacquireonce.litmus. */
 	void CPU0(void)
 	{
 		WRITE_ONCE(x, 1);
@@ -359,7 +359,7 @@ can be seen in the LB+poonceonces.litmus litmus test.
 One way of avoiding the counter-intuitive outcome is through the use of a
 control dependency paired with a full memory barrier:
 
-	/* See LB+ctrlonces+mbonces.litmus. */
+	/* See LB+ctrlonceonce+mbonceonce.litmus. */
 	void CPU0(void)
 	{
 		r0 = READ_ONCE(x);
@@ -437,7 +437,7 @@ invocation was replaced with READ_ONCE().
 It is tempting to assume that CPU0()'s store to x is globally ordered
 before CPU1()'s store to z, but this is not the case:
 
-	/* See Z6.0+pooncerelease+poacquirerelease+pombonce.litmus. */
+	/* See Z6.0+pooncerelease+poacquirerelease+mbonceonce.litmus. */
 	void CPU0(void)
 	{
 		WRITE_ONCE(x, 1);
