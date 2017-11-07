@@ -517,162 +517,9 @@ CPU1 puts the waiting task to sleep and CPU0 fails to wake it up.
 
 Note that use of locking can greatly simplify this pattern.
 
-6.	W+RWC+porel+mb+mb  @@@  I intend to drop this one.  Nice
-	history, but rather obscure pattern.  And if the pattern
-	hadn't been obscure, Peter never would have needed to resort
-	to herd7.  ;-)
 
-	See recipes-LKcode-63cae12bce986.txt.
-
-	Mostly of historical interest -- as far as I know, this commit
-	was the first to contain a litmus test.
-
-7.	Context switch and migration.  A bit specialized, so might leave
-	this one out.  @@@  And I do intend to drop this one because
-	it is a bit on the advanced side.
-
-	When a thread moves from one CPU to another to another, the
-	scheduler is required to do whatever is necessary for the thread
-	to see any prior accesses that it executed on other CPUs.  This
-	includes "interesting" interactions with wake_up() shown in the
-	following comment from try_to_wake_up() in kernel/sched/core.c:
-
- * Notes on Program-Order guarantees on SMP systems.
- *
- *  MIGRATION
- *
- * The basic program-order guarantee on SMP systems is that when a task [t]
- * migrates, all its activity on its old CPU [c0] happens-before any subsequent
- * execution on its new CPU [c1].
- *
- * For migration (of runnable tasks) this is provided by the following means:
- *
- *  A) UNLOCK of the rq(c0)->lock scheduling out task t
- *  B) migration for t is required to synchronize *both* rq(c0)->lock and
- *     rq(c1)->lock (if not at the same time, then in that order).
- *  C) LOCK of the rq(c1)->lock scheduling in task
- *
- * Transitivity guarantees that B happens after A and C after B.
- * Note: we only require RCpc transitivity.
- * Note: the CPU doing B need not be c0 or c1
- *
- * Example:
- *
- *   CPU0            CPU1            CPU2
- *
- *   LOCK rq(0)->lock
- *   sched-out X
- *   sched-in Y
- *   UNLOCK rq(0)->lock
- *
- *                                   LOCK rq(0)->lock // orders against CPU0
- *                                   dequeue X
- *                                   UNLOCK rq(0)->lock
- *
- *                                   LOCK rq(1)->lock
- *                                   enqueue X
- *                                   UNLOCK rq(1)->lock
- *
- *                   LOCK rq(1)->lock // orders against CPU2
- *                   sched-out Z
- *                   sched-in X
- *                   UNLOCK rq(1)->lock
-
-Summary:
-
-	CPU0
-
-	smp_store_release(&X->on_cpu, 0); /* from sched-out X */
-	UNLOCK rq(0)->lock
-
-
-	CPU2
-
-	LOCK rq(0)->lock
-	UNLOCK rq(1)->lock
-
-
-	CPU1
-
-	LOCK rq(1)->lock
-	X->on_cpu = 1; /* from sched-in X */
-
-
-	BUG_ON("each LOCK reads from its UNLOCK" && X->on_cpu == 0);
-
-(c.f., Z6.2 in test6.pdf)
-
- *  BLOCKING -- aka. SLEEP + WAKEUP
- *
- * For blocking we (obviously) need to provide the same guarantee as for
- * migration. However the means are completely different as there is no lock
- * chain to provide order. Instead we do:
- *
- *   1) smp_store_release(X->on_cpu, 0)
- *   2) smp_cond_load_acquire(!X->on_cpu)
- *
- * Example:
- *
- *   CPU0 (schedule)  CPU1 (try_to_wake_up) CPU2 (schedule)
- *
- *   LOCK rq(0)->lock LOCK X->pi_lock
- *   dequeue X
- *   sched-out X
- *   smp_store_release(X->on_cpu, 0);
- *
- *                    smp_cond_load_acquire(&X->on_cpu, !VAL);
- *                    X->state = WAKING
- *                    set_task_cpu(X,2)
- *
- *                    LOCK rq(2)->lock
- *                    enqueue X
- *                    X->state = RUNNING
- *                    UNLOCK rq(2)->lock
- *
- *                                          LOCK rq(2)->lock // orders against CPU1
- *                                          sched-out Z
- *                                          sched-in X
- *                                          UNLOCK rq(2)->lock
- *
- *                    UNLOCK X->pi_lock
- *   UNLOCK rq(0)->lock
-
-Summary:
-
-	CPU0
-
-	smp_store_release(&X->on_cpu, 0); /* from sched-out X */
-
-
-	CPU1
-
-	smp_cond_load_acquire(&X->on_cpu, !VAL);
-	UNLOCK rq(2)->lock
-
-
-	CPU2
-
-	LOCK rq(2)->lock
-	X->on_cpu = 1; // from sched-in X
-
-
-	BUG_ON("each LOCK reads from its UNLOCK" && X->on_cpu == 0);
-
-(c.f., WWC in test6.pdf)
-
- * However; for wakeups there is a second guarantee we must provide, namely we
- * must observe the state that lead to our wakeup. That is, not only must our
- * task observe its own prior state, it must also observe the stores prior to
- * its wakeup.
- *
- * This means that any means of doing remote wakeups must order the CPU doing
- * the wakeup against the CPU the task is going to end up running on. This,
- * however, is already required for the regular Program-Order guarantee above,
- * since the waking CPU is the one issueing the ACQUIRE (smp_cond_load_acquire).
-
-
-Rule of thumb
-=============
+Rules of thumb
+==============
 
 There might seem to be no pattern governing what ordering primitives are
 needed in which situations, but this is not the case.  There is a pattern
@@ -714,3 +561,7 @@ write-to-read links, then a full memory barrier is required between
 each successive pair of non-write-to-read links.  This case is
 illustrated by the Z6.0 litmus tests, both in the locking and in
 the release-acquire sections.
+
+However, if you find yourself having to stretch these rules of thumb
+to fit your situation, you should consider creating a litmus test and
+running it on the model.
