@@ -194,8 +194,8 @@ Taking off the training wheels
 This section looks at more complex examples, including message passing,
 load buffering, release-acquire chains, store buffering, write plus
 read-write coherence, and finally context switching and task migration.
-Many classes of litmus tests have abbreviated names, which are may be
-found here: https://www.cl.cam.ac.uk/~pes20/ppc-supplemental/test6.pdf
+Many classes of litmus tests have abbreviated names, which may be found
+here: https://www.cl.cam.ac.uk/~pes20/ppc-supplemental/test6.pdf
 
 
 Message passing (MP)
@@ -459,8 +459,9 @@ before CPU1()'s store to z, but this is not the case:
 
 One might hope that if the final value of r1 is 1 and the final value
 of z is 2, then the final value of r2 must also be 1, but the opposite
-outcome really is possible.  This situation is accounted for in the
-rules of thumb below.
+outcome really is possible.  The reason, of course, is that in this
+version, CPU2() is not part of the release-acquire chain.  This
+situation is accounted for in the rules of thumb below.
 
 Despite this limitation, release-acquire chains are low-overhead as
 well as simple and powerful, at least as memory-ordering mechanisms go.
@@ -529,12 +530,12 @@ given litmus test.  There are three types of linkage:
 1.	Write-to-read, where the next CPU reads the value that the
 	previous CPU wrote.  The LB litmus-test patterns contain only
 	this type of relation.	In formal memory-modeling texts, this
-	relation is called "read from" and is usually abbreviated "rf".
+	relation is called "reads-from" and is usually abbreviated "rf".
 
 2.	Read-to-write, where the next CPU overwrites the value that the
 	previous CPU read.  The SB litmus test contains only this type
 	of relation.  In formal memory-modeling texts, this relation is
-	often called "from read" and is sometimes abbreviated "fr".
+	often called "from-reads" and is sometimes abbreviated "fr".
 
 3.	Write-to-write, where the next CPU overwrites the value written
 	by the previous CPU.  The Z6.0 litmus test pattern contains a
@@ -546,21 +547,22 @@ given litmus test.  There are three types of linkage:
 
 The strength of memory ordering required for a given litmus test to
 avoid a counter-intuitive outcome depends on the types of relations
-linking the memory accesses for the outcome in question.
+linking the memory accesses for the outcome in question:
 
-If all links are write-to-read links, then the weakest possible
-ordering within each CPU suffices.  For example, in the LB litmus
-test, a control dependency was enough to do the job.
+o	If all links are write-to-read links, then the weakest
+	possible ordering within each CPU suffices.  For example, in
+	the LB litmus test, a control dependency was enough to do the
+	job.
 
-If all but one of the links are write-to-read links, then a
-release-acquire chain suffices.  Both the MP and the ISA2 litmus
-tests illustrate this case.
+o	If all but one of the links are write-to-read links, then a
+	release-acquire chain suffices.  Both the MP and the ISA2
+	litmus tests illustrate this case.
 
-If more than one of the links are something other than
-write-to-read links, then a full memory barrier is required between
-each successive pair of non-write-to-read links.  This case is
-illustrated by the Z6.0 litmus tests, both in the locking and in
-the release-acquire sections.
+o	If more than one of the links are something other than
+	write-to-read links, then a full memory barrier is required
+	between each successive pair of non-write-to-read links.  This
+	case is illustrated by the Z6.0 litmus tests, both in the
+	locking and in the release-acquire sections.
 
 However, if you find yourself having to stretch these rules of thumb
 to fit your situation, you should consider creating a litmus test and
