@@ -18,7 +18,6 @@ P1(int *y, int *z)
 
 P2(int *x, int *z)
 {
-	int r0;
 	int r1;
 
 	WRITE_ONCE(*z, 2);
