@@ -172,38 +172,39 @@ README
 LIMITATIONS
 ===========
 
-This tool has the following limitations:
+The Linux-kernel memory model has the following limitations:
 
-1.	It does not model compiler optimizations.  Of course, its use
+1.	Compiler optimizations are not modeled.  Of course, its use
 	of READ_ONCE() and WRITE_ONCE() limits the compiler's ability
 	to optimize, but there is Linux-kernel code that uses bare C
 	memory accesses.  Handling this code is on the to-do list.
 
-2.	It does not support multiple access sizes, and thus also does
-	not support misaligned or partially overlapping accesses.
+2.	Multiple access sizes are not supported, and therefore neither
+	are misaligned or partially overlapping accesses.
 
-3.	Non-trivial data structures such as arrays or structures.
-	However, pointers are supported, allowing trivial linked
-	lists to be constructed.
+3.	Non-trivial data structures such as arrays or structures are
+	not supported.	However, pointers are supported, allowing trivial
+	linked lists to be constructed.
 
-4.	Dynamic memory allocation, although this can be worked around in
-	some cases by supplying multiple statically allocated variables.
+4.	Dynamic memory allocation is not supported, although this can
+	be worked around in some cases by supplying multiple statically
+	allocated variables.
 
 5.	Exceptions and interrupts are not modeled.  In some cases,
 	this limitation can be overcome by modeling the interrupt or
 	exception with an additional process.
 
-6.	Any sort of I/O such as MMIO or DMA.
+6.	I/O such as MMIO or DMA is not supported.
 
 7.	Self-modifying code, such as that found in the kernel's
 	alternatives mechanism, function tracer, Berkeley Packet Filter
-	JIT compiler, and module loader.
+	JIT compiler, and module loader is not supported.
 
 8.	Complete modeling of all variants of atomic read-modify-write
-	operations, locking primitives, and RCU.  For example, call_rcu()
-	and rcu_barrier() are not supported.  However, a substantial
-	amount of support is provided for these operations, as shown in
-	the linux-kernel.def file.
+	operations, locking primitives, and RCU is not provided.
+	For example, call_rcu() and rcu_barrier() are not supported.
+	However, a substantial amount of support is provided for these
+	operations, as shown in the linux-kernel.def file.
 
 Some of these limitations may be overcome, but others are more likely
 to be addressed by incorporating the Linux-kernel memory model into
