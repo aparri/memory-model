@@ -1048,8 +1048,18 @@ a load-acquire reads from an earlier store-release.  For example:
 If the smp_load_acquire() ends up obtaining the 123 value that was
 stored by the smp_store_release(), the LKMM says that the load must be
 executed after the store; the store cannot be forwarded to the load.
-This requirement does not arise from the operational model, but all
-the architectures currently supported by the Linux kernel do obey it.
+This requirement does not arise from the operational model, but it
+yields correct predictions on all architectures supported by the Linux
+kernel, although for differing reasons.
+
+On some architectures, including x86 and ARMv8, it is true that the
+store cannot be forwarded to the load.  On others, including PowerPC
+and ARMv7, smp_store_release() generates object code that starts with
+a fence and smp_load_acquire() generates object code that ends with a
+fence.  The upshot is that even though the store may be forwarded to
+the load, it is still true that any instruction preceding the store
+will be executed before the load or any following instructions, and
+the store will be executed before any instruction following the load.
 
 
 AND THEN THERE WAS ALPHA
