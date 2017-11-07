@@ -23,7 +23,7 @@ If there is only one CPU on the one hand or only one variable
 on the other, the code will execute in order.  There are (as
 usual) some things to be careful of:
 
-1.	Some some aspects of the C language are unordered.  For example,
+1.	Some aspects of the C language are unordered.  For example,
 	in the expression "f(x) + g(y)", the order in which f and g are
 	called is not defined; the object code is allowed to use either
 	order or even to interleave the computations.
@@ -682,12 +682,12 @@ given litmus test.  There are three types of linkage:
 1.	Write-to-read, where the next CPU reads the value that the
 	previous CPU wrote.  The LB litmus-test patterns contain only
 	this type of relation.	In formal memory-modeling texts, this
-	relation is called "reads from" and is usually abbreviated "rf".
+	relation is called "read from" and is usually abbreviated "rf".
 
 2.	Read-to-write, where the next CPU overwrites the value that the
 	previous CPU read.  The SB litmus test contains only this type
 	of relation.  In formal memory-modeling texts, this relation is
-	often called "from reads" and is sometimes abbreviated "fr".
+	often called "from read" and is sometimes abbreviated "fr".
 
 3.	Write-to-write, where the next CPU overwrites the value written
 	by the previous CPU.  The Z6.0 litmus test pattern contains a
