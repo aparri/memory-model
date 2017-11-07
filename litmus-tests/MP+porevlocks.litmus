@@ -21,4 +21,4 @@ P1(int *x, int *y, spinlock_t *mylock)
 	WRITE_ONCE(*y, 1);
 }
 
-exists (1:r0=1 /\ 1:r1=0)
+exists (0:r0=1 /\ 0:r1=0)
