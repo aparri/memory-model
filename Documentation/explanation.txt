@@ -1341,18 +1341,19 @@ The propagates-before (pb) relation capitalizes on the special
 features of strong fences.  It links two events A and B whenever some
 store is coherence-later than A and propagates to every CPU and to RAM
 before B executes.  The formal definition requires that A be linked to
-B via a coe or fre link, an arbitrary number of cumul-fences, a
-strong fence, and an arbitrary number of hb links.  Let's see how this
-definition works out.
+B via a coe or fre link, an arbitrary number of cumul-fences, an
+optional rfe link, a strong fence, and an arbitrary number of hb
+links.  Let's see how this definition works out.
 
 Consider first the case where A is a store (implying that the sequence
 of links begins with coe).  Then there are events W, X, Y, and Z such
 that:
 
-	A ->coe W ->cumul-fence* X ->rfe Y ->strong-fence Z ->hb* B,
+	A ->coe W ->cumul-fence* X ->rfe? Y ->strong-fence Z ->hb* B,
 
 where the * suffix indicates an arbitrary number of links of the
-specified type.  Because of the cumul-fence links, we know that W will
+specified type, and the ? suffix indicates the link is optional (Y may
+be equal to X).  Because of the cumul-fence links, we know that W will
 propagate to Y's CPU before X does, hence before Y executes and hence
 before the strong fence executes.  Because this fence is strong, we
 know that W will propagate to every CPU and to RAM before Z executes.
