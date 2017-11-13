@@ -40,6 +40,11 @@ ISA2+pooncerelease+poacquirerelease+poacquireonce.litmus
 	Can a release-acquire chain order a prior store against
 	a later load?
 
+LB+ctrlonceonce+mbonceonce.litmus
+	Does a control dependency and an smp_mb() suffice for the
+	load-buffering litmus test, where each process reads from one
+	of two variables then writes to the other?
+
 LB+poacquireonce+pooncerelease.litmus
 	Does a release-acquire pair suffice for the load-buffering
 	litmus test, where each process reads from one of two variables then
@@ -49,8 +54,23 @@ LB+poonceonces.litmus
 	As above, but with store-release replaced with WRITE_ONCE()
 	and load-acquire replaced with READ_ONCE().
 
+MP+onceassign+derefonce.litmus
+	As below, but with rcu_assign_pointer() and an rcu_dereference().
+
+MP+polocks.litmus
+	As below, but with the second access of the writer process
+	and the first access of reader process protected by a lock.
+
 MP+poonceonces.litmus
 	As below, but without the smp_rmb() and smp_wmb().
+
+MP+pooncerelease+poacquireonce.litmus
+	As below, but with a release-acquire chain.
+
+MP+porevlocks.litmus
+	As below, but with the first access of the writer process
+	and the second access of reader process protected by a lock.
+	
 
 MP+wmbonceonce+rmbonceonce.litmus
 	Does a smp_wmb() (between the stores) and an smp_rmb() (between
@@ -58,6 +78,9 @@ MP+wmbonceonce+rmbonceonce.litmus
 	process writes data and then a flag, and the other process reads
 	the flag and then the data.  (This is similar to the ISA2 tests,
 	but with two processes instead of three.)
+
+README
+	This file.
 
 R+mbonceonces.litmus
 	This is the fully ordered (via smp_mb()) version of one of
@@ -88,6 +111,20 @@ WRC+poonceonces+Once.litmus
 WRC+pooncerelease+rmbonceonce+Once.litmus
 	These two are members of an extension of the MP litmus-test class
 	in which the first write is moved to a separate process.
+
+Z6.0+pooncelock+pooncelock+pombonce.litmus
+	Is the ordering provided by a spin_unlock() and a subsequent
+	spin_lock() sufficient to make ordering apparent to accesses
+	by a process not holding the lock?
+
+Z6.0+pooncelock+poonceLock+pombonce.litmus
+	As above, but with smp_mb__after_spinlock() immediately
+	following the spin_lock().
+
+Z6.0+pooncerelease+poacquirerelease+mbonceonce.litmus
+	Is the ordering provided by a release-acquire chain sufficient
+	to make ordering apparent to accesses by a process that does
+	not participate in that release-acquire chain?
 
 A great many more litmus tests are available here:
 
