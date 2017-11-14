@@ -71,16 +71,12 @@ MP+porevlocks.litmus
 	As below, but with the first access of the writer process
 	and the second access of reader process protected by a lock.
 	
-
 MP+wmbonceonce+rmbonceonce.litmus
 	Does a smp_wmb() (between the stores) and an smp_rmb() (between
 	the loads) suffice for the message-passing litmus test, where one
 	process writes data and then a flag, and the other process reads
 	the flag and then the data.  (This is similar to the ISA2 tests,
 	but with two processes instead of three.)
-
-README
-	This file.
 
 R+mbonceonces.litmus
 	This is the fully ordered (via smp_mb()) version of one of
