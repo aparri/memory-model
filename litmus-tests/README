@@ -89,8 +89,6 @@ R+mbonceonces.litmus
 
 R+poonceonces.litmus
 	As above, but without the smp_mb() invocations.
-	[ Shouldn't we have one with smp_wmb() in the process with both
-	  writes, and smp_mb() in the other process. ]
 
 SB+mbonceonces.litmus
 	This is the fully ordered (again, via smp_mb() version of store

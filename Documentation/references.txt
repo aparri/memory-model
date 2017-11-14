@@ -85,6 +85,10 @@ o	Jade Alglave, Luc Maranget, Paul E. McKenney, Andrea Parri, and
 Memory-model tooling
 ====================
 
+o	Daniel Jackson. 2002. "Alloy: A Lightweight Object Modelling
+	Notation". ACM Trans. Softw. Eng. Methodol. 11, 2 (April 2002),
+	256–290. http://doi.acm.org/10.1145/505145.505149
+
 o	Jade Alglave, Luc Maranget, and Michael Tautschnig. 2014. "Herding
 	Cats: Modelling, Simulation, Testing, and Data Mining for Weak
 	Memory". ACM Trans. Program. Lang. Syst. 36, 2, Article 7 (July
@@ -95,12 +99,8 @@ o	Jade Alglave, Patrick Cousot, and Luc Maranget. 2016. "Syntax and
 	cat". CoRR abs/1608.07531 (2016). http://arxiv.org/abs/1608.07531
 
 
-Uncategorized stuff (any of this really needed?)
-================================================
-
-o	Daniel Jackson. 2002. "Alloy: A Lightweight Object Modelling
-	Notation". ACM Trans. Softw. Eng. Methodol. 11, 2 (April 2002),
-	256–290. http://doi.acm.org/10.1145/505145.505149
+Memory-model comparisons
+========================
 
 o	Paul E. McKenney, Ulrich Weigand, Andrea Parri, and Boqun
 	Feng. 2016. "Linux-Kernel Memory Model". (6 June 2016).
