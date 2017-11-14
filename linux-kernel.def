@@ -8,6 +8,7 @@ smp_load_acquire(X) __load{acquire}(*X)
 rcu_assign_pointer(X,V) { __store{release}(X,V); }
 lockless_dereference(X) __load{lderef}(X)
 rcu_dereference(X) __load{deref}(X)
+// SPDX-License-Identifier: GPL-2.0
 
 // Fences
 smp_mb() { __fence{mb} ; }
