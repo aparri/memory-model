@@ -48,4 +48,5 @@ Signed-off-by: David Howells <dhowells@redhat.com>
 Signed-off-by: Jade Alglave <j.alglave@ucl.ac.uk>
 Signed-off-by: Luc Maranget <luc.maranget@inria.fr>
 Signed-off-by: "Paul E. McKenney" <paulmck@linux.vnet.ibm.com>
+Acked-by: "Reshetova, Elena" <elena.reshetova@intel.com>
 Cc: <linux-arch@vger.kernel.org>
