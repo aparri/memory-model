@@ -56,4 +56,5 @@ Acked-by: Boqun Feng <boqun.feng@gmail.com>
 Acked-by: Nicholas Piggin <npiggin@gmail.com>
 Acked-by: David Howells <dhowells@redhat.com>
 Acked-by: "Reshetova, Elena" <elena.reshetova@intel.com>
+Acked-by: Michal Hocko <mhocko@suse.com>
 Cc: <linux-arch@vger.kernel.org>
