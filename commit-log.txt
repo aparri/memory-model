@@ -45,6 +45,7 @@ refer to the Linux-kernel memory model presentations at 2016 LinuxCon EU,
 2016 Kernel Summit, 2016 Linux Plumbers Conference, 2017 linux.conf.au,
 or 2017 Linux Plumbers Conference microconference.
 
+Reviewed-by: Boqun Feng <boqun.feng@gmail.com>
 Co-Developed-by: Alan Stern <stern@rowland.harvard.edu>
 Co-Developed-by: Andrea Parri <parri.andrea@gmail.com>
 Co-Developed-by: Jade Alglave <j.alglave@ucl.ac.uk>
