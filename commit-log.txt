@@ -45,7 +45,6 @@ refer to the Linux-kernel memory model presentations at 2016 LinuxCon EU,
 2016 Kernel Summit, 2016 Linux Plumbers Conference, 2017 linux.conf.au,
 or 2017 Linux Plumbers Conference microconference.
 
-Reviewed-by: Boqun Feng <boqun.feng@gmail.com>
 Co-Developed-by: Alan Stern <stern@rowland.harvard.edu>
 Co-Developed-by: Andrea Parri <parri.andrea@gmail.com>
 Co-Developed-by: Jade Alglave <j.alglave@ucl.ac.uk>
@@ -56,9 +55,9 @@ Signed-off-by: Andrea Parri <parri.andrea@gmail.com>
 Signed-off-by: Jade Alglave <j.alglave@ucl.ac.uk>
 Signed-off-by: Luc Maranget <luc.maranget@inria.fr>
 Signed-off-by: "Paul E. McKenney" <paulmck@linux.vnet.ibm.com>
+Reviewed-by: Boqun Feng <boqun.feng@gmail.com>
 Acked-by: Will Deacon <will.deacon@arm.com>
 Acked-by: Peter Zijlstra <peterz@infradead.org>
-Acked-by: Boqun Feng <boqun.feng@gmail.com>
 Acked-by: Nicholas Piggin <npiggin@gmail.com>
 Acked-by: David Howells <dhowells@redhat.com>
 Acked-by: "Reshetova, Elena" <elena.reshetova@intel.com>
