@@ -192,8 +192,7 @@ Taking off the training wheels
 ==============================
 
 This section looks at more complex examples, including message passing,
-load buffering, release-acquire chains, store buffering, write plus
-read-write coherence, and finally context switching and task migration.
+load buffering, release-acquire chains, store buffering.
 Many classes of litmus tests have abbreviated names, which may be found
 here: https://www.cl.cam.ac.uk/~pes20/ppc-supplemental/test6.pdf
 
