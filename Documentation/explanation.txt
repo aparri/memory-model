@@ -972,7 +972,7 @@ data dependency), what location it should be stored into (in the case
 of an address dependency), or whether the store should actually take
 place (in the case of a control dependency).
 
-Dependencies to load instructions more problematic.  To begin with,
+Dependencies to load instructions are more problematic.  To begin with,
 there is no such thing as a data dependency to a load.  Next, a CPU
 has no reason to respect a control dependency to a load, because it
 can always satisfy the second load speculatively before the first, and
