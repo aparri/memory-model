@@ -31,9 +31,9 @@ let matched = let rec
 	    unmatched-locks = Rcu_read_lock \ domain(matched)
 	and unmatched-unlocks = Rcu_read_unlock \ range(matched)
 	and unmatched = unmatched-locks | unmatched-unlocks
-	and unmatched-po = (unmatched * unmatched) & po
-	and unmatched-locks-to-unlocks = (unmatched-locks *
-			unmatched-unlocks) & po
+	and unmatched-po = [unmatched] ; po ; [unmatched]
+	and unmatched-locks-to-unlocks =
+		[unmatched-locks] ; po ; [unmatched-unlocks]
 	and matched = matched | (unmatched-locks-to-unlocks \
 		(unmatched-po ; unmatched-po))
 	in matched
