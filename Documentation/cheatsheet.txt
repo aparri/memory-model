@@ -28,14 +28,3 @@ Key:	C:	Ordering is cumulative
 	DW:	Dependent write (address, data, or control dependency)
 	RMW:	Atomic read-modify-write operation
 	SV	Same-variable access
-
-
-
-
-
-
-
-
-
-
-
