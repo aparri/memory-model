@@ -1,8 +1,35 @@
 Explanation of the Linux-Kernel Memory Model
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Author: Alan Stern <stern@rowland.harvard.edu>
-Date: October 2017
+:Author: Alan Stern <stern@rowland.harvard.edu>
+:Created: October 2017
+
+.. Contents
+
+  1. INTRODUCTION
+  2. BACKGROUND
+  3. A SIMPLE EXAMPLE
+  4. A SELECTION OF MEMORY MODELS
+  5. ORDERING AND CYCLES
+  6. EVENTS
+  7. THE PROGRAM ORDER RELATION: po AND po-loc
+  8. A WARNING
+  9. DEPENDENCY RELATIONS: data, addr, and ctrl
+  10. THE READS-FROM RELATION: rf, rfi, and rfe
+  11. CACHE COHERENCE AND THE COHERENCE ORDER RELATION: co, coi, and coe
+  12. THE FROM-READS RELATION: fr, fri, and fre
+  13. AN OPERATIONAL MODEL
+  14. PROPAGATION ORDER RELATION: cumul-fence
+  15. DERIVATION OF THE LKMM FROM THE OPERATIONAL MODEL
+  16. SEQUENTIAL CONSISTENCY PER VARIABLE
+  17. ATOMIC UPDATES: rmw
+  18. THE PRESERVED PROGRAM ORDER RELATION: ppo
+  19. AND THEN THERE WAS ALPHA
+  20. THE HAPPENS-BEFORE RELATION: hb
+  21. THE PROPAGATES-BEFORE RELATION: pb
+  22. RCU RELATIONS: link, gp-link, rscs-link, and rcu-path
+  23. ODDS AND ENDS
+
 
 
 INTRODUCTION
