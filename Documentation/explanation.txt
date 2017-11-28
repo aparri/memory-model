@@ -971,7 +971,7 @@ situation: Fences are a source of ppo links.  Suppose X and Y are
 memory accesses with X ->po Y; then the CPU must execute X before Y if
 any of the following hold:
 
-	X strong (smp_mb() or synchronize_rcu()) fence occurs between
+	A strong (smp_mb() or synchronize_rcu()) fence occurs between
 	X and Y;
 
 	X and Y are both stores and an smp_wmb() fence occurs between
