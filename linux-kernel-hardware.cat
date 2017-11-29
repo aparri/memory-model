@@ -68,7 +68,7 @@ let A-cumul(r) = rfe? ; r
 let cumul-fence = A-cumul(strong-fence | po-rel) | wmb
 
 let rec prop = (overwrite & ext)? ; cumul-fence ; hb*
-    and hb = ppo | rfe | (((hb* ; prop) \ id) & int)
+    and hb = ppo | rfe | ((hb* ; prop) & int)
 acyclic hb as happens-before
 
 (****************************************)
