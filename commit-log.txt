@@ -45,6 +45,43 @@ refer to the Linux-kernel memory model presentations at 2016 LinuxCon EU,
 2016 Kernel Summit, 2016 Linux Plumbers Conference, 2017 linux.conf.au,
 or 2017 Linux Plumbers Conference microconference.
 
+Discussion of v1 has raised several issues, which we do not believe should
+block acceptance given that this level of change will be ongoing, just
+as it has been with memory-barriers.txt:
+
+o	Under what conditions should ordering provided by pure locking
+	be seen by CPUs not holding the relevant lock(s)?  In particular,
+	should the message-passing pattern be forbidden?
+
+o	Should examples involving C11 release sequences be forbidden?
+	Note that this C11 is still a moving target for this issue:
+	http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2017/p0735r0.html
+
+o	Some details of the handling of internal dependencies for atomic
+	read-modify-write atomic operations are still subject to debate.
+
+o	Changes recently accepted into mainline greatly reduce the need
+	to handle DEC Alpha as a special case.  If these changes stick,
+	the memory model can be simplified accordingly.
+
+o	Will changes be required to accommodate RISC-V?
+
+Differences from v1:
+
+o	Add SPDX notations to .bell and .cat files.
+
+o	Fixed copyright notices in .bell and .cat files.
+
+o	Updates to READMEs and other documentation based on review
+	feedback.
+
+o	Added a memory-ordering cheatsheet.
+
+o	Update sigs to new Co-Developed-by and add acks and
+	reviewed-bys.
+
+o	Simplify rules detecting nested RCU read-side critical sections.
+
 Co-Developed-by: Alan Stern <stern@rowland.harvard.edu>
 Co-Developed-by: Andrea Parri <parri.andrea@gmail.com>
 Co-Developed-by: Jade Alglave <j.alglave@ucl.ac.uk>
