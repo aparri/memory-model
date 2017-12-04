@@ -115,6 +115,15 @@ for more information.
 DESCRIPTION OF FILES
 ====================
 
+Documentation/cheatsheet.txt
+	Quick-reference guide to the Linux-kernel memory model.
+	
+Documentation/recipes.txt
+	Lists common memory-ordering patterns.
+	
+Documentation/references.txt
+	Provides background reading.
+
 Documentation/explanation.txt
 	Describes the memory model in detail.
 	
