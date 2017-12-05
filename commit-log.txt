@@ -70,8 +70,6 @@ Differences from v1:
 
 o	Add SPDX notations to .bell and .cat files.
 
-o	Fixed copyright notices in .bell and .cat files.
-
 o	Updates to READMEs and other documentation based on review
 	feedback.
 
