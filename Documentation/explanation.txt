@@ -1291,7 +1291,7 @@ This is the MP pattern again, with an smp_wmb() fence between the two
 stores.  If r1 = 1 and r2 = 0 at the end then there is a prop link
 from P1's second load to its first (backwards!).  The reason is
 similar to the previous examples: The value P1 loads from buf gets
-overwritten by P1's store to buf, the fence guarantees that the store
+overwritten by P0's store to buf, the fence guarantees that the store
 to buf will propagate to P1 before the store to flag does, and the
 store to flag propagates to P1 before P1 reads flag.
 
