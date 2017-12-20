@@ -445,7 +445,7 @@ before CPU1()'s store to z, but this is not the case:
 
 	void CPU1(void)
 	{
-		r1 = smp_load_acquire(y);
+		r0 = smp_load_acquire(y);
 		smp_store_release(&z, 1);
 	}
 
@@ -453,14 +453,14 @@ before CPU1()'s store to z, but this is not the case:
 	{
 		WRITE_ONCE(z, 2);
 		smp_mb();
-		r2 = READ_ONCE(x);
+		r1 = READ_ONCE(x);
 	}
 
-One might hope that if the final value of r1 is 1 and the final value
-of z is 2, then the final value of r2 must also be 1, but the opposite
-outcome really is possible.  The reason, of course, is that in this
-version, CPU2() is not part of the release-acquire chain.  This
-situation is accounted for in the rules of thumb below.
+One might hope that if the final value of r0 is 1 and the final value
+of z is 2, then the final value of r1 must also be 1, but it really is
+possible for r1 to have the final value of 0.  The reason, of course,
+is that in this version, CPU2() is not part of the release-acquire chain.
+This situation is accounted for in the rules of thumb below.
 
 Despite this limitation, release-acquire chains are low-overhead as
 well as simple and powerful, at least as memory-ordering mechanisms go.
