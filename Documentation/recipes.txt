@@ -138,7 +138,7 @@ Consider this example:
 	void CPU1(void)
 	{
 		spin_lock(&mylock);
-		r1 = READ_ONCE(y);
+		r0 = READ_ONCE(y);
 		WRITE_ONCE(z, 1);
 		spin_unlock(&mylock);
 	}
@@ -147,12 +147,12 @@ Consider this example:
 	{
 		WRITE_ONCE(z, 2);
 		smp_mb();
-		r2 = READ_ONCE(x);
+		r1 = READ_ONCE(x);
 	}
 
 Counter-intuitive though it might be, it is quite possible to have
-the final value of r1 be 1, the final value of z be 2, and the final
-value of r2 be 0.  The reason for this surprising outcome is that
+the final value of r0 be 1, the final value of z be 2, and the final
+value of r1 be 0.  The reason for this surprising outcome is that
 CPU2() never acquired the lock, and thus did not benefit from the
 lock's ordering properties.
 
@@ -172,7 +172,7 @@ of smp_mb__after_spinlock():
 	{
 		spin_lock(&mylock);
 		smp_mb__after_spinlock();
-		r1 = READ_ONCE(y);
+		r0 = READ_ONCE(y);
 		WRITE_ONCE(z, 1);
 		spin_unlock(&mylock);
 	}
@@ -181,7 +181,7 @@ of smp_mb__after_spinlock():
 	{
 		WRITE_ONCE(z, 2);
 		smp_mb();
-		r2 = READ_ONCE(x);
+		r1 = READ_ONCE(x);
 	}
 
 This addition of smp_mb__after_spinlock() strengthens the lock acquisition
@@ -260,8 +260,10 @@ pointers.  The general approach is shown below:
 
 	void CPU1(void)
 	{
+		rcu_read_lock();
 		r0 = rcu_dereference(y);
 		r1 = READ_ONCE(*r0);
+		rcu_read_unlock();
 	}
 
 In this example, if the final value of r0 is &x then the final value of
@@ -416,17 +418,17 @@ need to be fully understood.  Here is an example that maintains order:
 
 	void CPU1(void)
 	{
-		r1 = smp_load_acquire(y);
+		r0 = smp_load_acquire(y);
 		smp_store_release(&z, 1);
 	}
 
 	void CPU2(void)
 	{
-		r2 = smp_load_acquire(z);
-		r3 = READ_ONCE(x);
+		r1 = smp_load_acquire(z);
+		r2 = READ_ONCE(x);
 	}
 
-In this case, if r1 and r2 both have final values of 1, then r3 must
+In this case, if r0 and r1 both have final values of 1, then r2 must
 also have a final value of 1.
 
 The ordering in this example is stronger than it needs to be.  For
