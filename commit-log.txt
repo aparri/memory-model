@@ -43,7 +43,40 @@ by Jade Alglave and also including Alan Stern, Andrea Parri, and Luc
 Maranget.  For more details on the history of this collaboration, please
 refer to the Linux-kernel memory model presentations at 2016 LinuxCon EU,
 2016 Kernel Summit, 2016 Linux Plumbers Conference, 2017 linux.conf.au,
-or 2017 Linux Plumbers Conference microconference.
+or 2017 Linux Plumbers Conference microconference.  However, one aspect
+of the history does bear repeating due to weak copyright tracking earlier
+in this project, which extends back to early 2015.  This weakness came
+to light in late 2017 after an LKMM presentation by Paul in which an
+audience member noted the similarity of some LKMM code to code in early
+published papers.  This prompted a copyright review.
+
+From Alan Stern:
+
+	To say that the model was mine is not entirely accurate.
+	Pieces of it (especially the Scpv and Atomic axioms) were taken
+	directly from Jade's models.  And of course the Happens-before
+	and Propagation relations and axioms were heavily based on
+	Jade and Luc's work, even though they weren't identical to the
+	earlier versions.  Only the RCU portion was completely original.
+
+	. . .
+
+	One can make a much better case that I wrote the bulk of lock.cat.
+	However, it was inspired by Luc's earlier version (and still
+	shares some elements in common), and of course it benefited from
+	feedback and testing from all members of our group.
+
+The model prior to Alan's was Luc Maranget's.  From Luc:
+
+	 I totally agree on Alan Stern's account of the linux kernel model
+	 genesis.  I thank him for his acknowledgments of my participation
+	 to previous model drafts.  I'd like to complete Alan Stern's
+	 statement: any bell cat code I have written has its roots in
+	 discussions with Jade Alglave and Paul McKenney. Moreover I
+	 have borrowed cat and bell code written by Jade Alglave freely.
+
+This copyright review therefore resulted in late adds to the copyright
+statements of several files.
 
 Discussion of v1 has raised several issues, which we do not believe should
 block acceptance given that this level of change will be ongoing, just
