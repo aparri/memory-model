@@ -100,8 +100,15 @@ o	Changes recently accepted into mainline greatly reduce the need
 o	Will changes be required to accommodate RISC-V?
 
 Differences from v1:
+	(http://lkml.kernel.org/r/20171113184031.GA26302@linux.vnet.ibm.com)
 
-o	Add SPDX notations to .bell and .cat files.
+o	Add SPDX notations to .bell and .cat files, replacing
+	textual license statements.
+
+o	Add reference to upcoming ASPLOS paper to .bell and .cat files.
+
+o	Updated identifier names in .bell and .cat files to match those
+	used in the ASPLOS paper.
 
 o	Updates to READMEs and other documentation based on review
 	feedback.
@@ -112,6 +119,8 @@ o	Update sigs to new Co-Developed-by and add acks and
 	reviewed-bys.
 
 o	Simplify rules detecting nested RCU read-side critical sections.
+
+o	Update copyright statements as noted above.
 
 Co-Developed-by: Alan Stern <stern@rowland.harvard.edu>
 Co-Developed-by: Andrea Parri <parri.andrea@gmail.com>
