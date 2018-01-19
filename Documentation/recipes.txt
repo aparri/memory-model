@@ -93,7 +93,7 @@ value of r1 must also be equal to 1.  In contrast, the weaker rule would
 say nothing about the final value of r1.
 
 The converse to the basic rule also holds, as illustrated by the
-following litmus test: 
+following litmus test:
 
 	/* See MP+porevlocks.litmus. */
 	void CPU0(void)
